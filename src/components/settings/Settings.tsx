@@ -4,6 +4,8 @@ import { Card } from '../ui/Card';
 import { Shield, Globe, Lock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useConfig } from '../../lib/api/hooks';
+import { BandwidthScheduler } from '../sync/BandwidthScheduler';
+import { SelectiveSync } from '../sync/SelectiveSync';
 
 export const Settings = () => {
     const { data: config, isLoading } = useConfig();
@@ -30,9 +32,10 @@ export const Settings = () => {
     if (isLoading) return <div className="p-8 text-zinc-500">Loading configuration...</div>;
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white mb-6">Settings</h2>
 
+            {/* Privacy Mode */}
             <Card className="border-l-4 border-l-yellow-500">
                 <div className="flex items-start justify-between">
                     <div>
@@ -80,6 +83,12 @@ export const Settings = () => {
                     </button>
                 </div>
             </Card>
+
+            {/* Bandwidth Scheduler */}
+            <BandwidthScheduler />
+
+            {/* Selective Sync */}
+            <SelectiveSync />
         </div>
     );
 };

@@ -6,6 +6,8 @@ import { formatBytes } from '../../lib/utils';
 import { WorkflowSelector } from './WorkflowSelector';
 import { FolderList } from './FolderList';
 import { DeviceList } from './DeviceList';
+import { ActivityTimeline } from './ActivityTimeline';
+import { ActiveTransfers } from './ActiveTransfers';
 
 export const Dashboard = () => {
     // ...
@@ -54,22 +56,21 @@ export const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Workflows & Folders & Devices */}
+                {/* Left Column: Workflows & Folders & Transfers */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="min-h-[400px]">
                         <WorkflowSelector />
                         <FolderList />
+                        <ActiveTransfers />
                     </Card>
                     <DeviceList />
                 </div>
 
-                {/* Right Column: Activity & Quick Actions */}
+                {/* Right Column: Activity Timeline */}
                 <div className="space-y-6">
-                    <Card title="Recent Activity" className="min-h-[300px]">
-                        <div className="flex items-center justify-center h-full text-zinc-500">
-                            Activity Log...
-                        </div>
-                    </Card>
+                    <div className="min-h-[400px]">
+                        <ActivityTimeline />
+                    </div>
                 </div>
             </div>
         </div>
