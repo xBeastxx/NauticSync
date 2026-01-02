@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Film, ChevronDown, ChevronRight, Check, EyeOff } from 'lucide-react';
+import { Image as ImageIcon, Film, ChevronDown, ChevronRight, Check, EyeOff, Music, Box } from 'lucide-react';
 import type { MediaFile } from './MediaHub';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
@@ -66,10 +66,14 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
     // Group files by type
     const images = files.filter(f => f.type === 'image');
     const videos = files.filter(f => f.type === 'video');
+    const audio = files.filter(f => f.type === 'audio');
+    const models = files.filter(f => f.type === 'model');
 
     const categories: CategorySection[] = [
         { id: 'images', label: 'Photos', icon: ImageIcon, files: images, color: 'yellow' },
         { id: 'videos', label: 'Videos', icon: Film, files: videos, color: 'purple' },
+        { id: 'audio', label: 'Audio', icon: Music, files: audio, color: 'green' },
+        { id: 'models', label: '3D Models', icon: Box, files: models, color: 'blue' },
     ].filter(cat => cat.files.length > 0);
 
     return (
@@ -86,7 +90,9 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
                             className={clsx(
                                 "flex items-center gap-2 mb-4 group",
                                 category.color === 'yellow' && "text-yellow-500",
-                                category.color === 'purple' && "text-purple-500"
+                                category.color === 'purple' && "text-purple-500",
+                                category.color === 'green' && "text-green-500",
+                                category.color === 'blue' && "text-blue-500"
                             )}
                         >
                             {isCollapsed ? (
@@ -140,9 +146,17 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
                                                     className="w-full h-full object-cover"
                                                     loading="lazy"
                                                 />
-                                            ) : (
+                                            ) : file.type === 'video' ? (
                                                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
                                                     <Film className="w-12 h-12 text-zinc-600" />
+                                                </div>
+                                            ) : file.type === 'audio' ? (
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-900/20 to-zinc-900">
+                                                    <Music className="w-12 h-12 text-green-600/50" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/20 to-zinc-900">
+                                                    <Box className="w-12 h-12 text-blue-600/50" />
                                                 </div>
                                             )}
 
@@ -161,6 +175,10 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
                                                 <div className="flex items-center gap-1.5 text-white text-xs font-medium">
                                                     {file.type === 'image' ? (
                                                         <ImageIcon className="w-3 h-3" />
+                                                    ) : file.type === 'audio' ? (
+                                                        <Music className="w-3 h-3" />
+                                                    ) : file.type === 'model' ? (
+                                                        <Box className="w-3 h-3" />
                                                     ) : (
                                                         <Film className="w-3 h-3" />
                                                     )}

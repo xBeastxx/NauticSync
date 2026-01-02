@@ -2,8 +2,6 @@ import { AppLayout } from './components/layout/AppLayout';
 import { useNavigationStore } from './store/navigationStore';
 import { Dashboard } from './components/sync/Dashboard';
 import { Settings } from './components/settings/Settings';
-import { DevDashboard } from './components/dev/DevDashboard';
-import { ConflictsView } from './components/sync/ConflictsView';
 import { MediaHub } from './components/media/MediaHub';
 import { SmartBackup } from './components/backup/SmartBackup';
 
@@ -14,10 +12,6 @@ function App() {
     switch (activeModule) {
       case 'sync':
         return <Dashboard />;
-      case 'conflicts':
-        return <ConflictsView />;
-      case 'dev':
-        return <DevDashboard />;
       case 'media':
         return <MediaHub />;
       case 'backup':
@@ -25,7 +19,7 @@ function App() {
       case 'settings':
         return <Settings />;
       default:
-        return null;
+        return <Dashboard />;
     }
   };
 

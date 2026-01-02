@@ -12,7 +12,7 @@ export interface MediaFile {
     id: string;
     path: string;
     name: string;
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'audio' | 'model';
     extension: string;
     size: number;
     modifiedTime: Date;
@@ -122,15 +122,14 @@ export const MediaHub = () => {
 
     const imageCount = mediaFiles.filter(f => f.type === 'image').length;
     const videoCount = mediaFiles.filter(f => f.type === 'video').length;
+    const audioCount = mediaFiles.filter(f => f.type === 'audio').length;
+    const modelCount = mediaFiles.filter(f => f.type === 'model').length;
 
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Media Explorer</h2>
-                    <p className="text-zinc-400">Browse and organize your synced media files.</p>
-                </div>
+                <div></div>
                 <div className="flex flex-wrap items-center gap-2">
                     {isSelectMode ? (
                         <>
@@ -238,10 +237,12 @@ export const MediaHub = () => {
 
             {/* Stats */}
             {mediaFiles.length > 0 && (
-                <div className="flex gap-4 text-sm text-zinc-500">
+                <div className="flex flex-wrap gap-4 text-sm text-zinc-500">
                     <span>{imageCount} images</span>
                     <span>{videoCount} videos</span>
-                    <span>{mediaFiles.length} total</span>
+                    {audioCount > 0 && <span>{audioCount} audio</span>}
+                    {modelCount > 0 && <span>{modelCount} models</span>}
+                    <span className="text-zinc-400 border-l border-zinc-800 pl-4">{mediaFiles.length} total</span>
                 </div>
             )}
 

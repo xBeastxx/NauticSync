@@ -1,19 +1,15 @@
 import { useState } from 'react';
 import { useNavigationStore, type AppModule } from '../../store/navigationStore';
-import { LayoutDashboard, Code2, Image, Archive, Settings, Activity, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useWorkflowStore } from '../../store/workflowStore';
+import { LayoutDashboard, Image, Archive, Settings, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export const Sidebar = () => {
     const { activeModule, setActiveModule } = useNavigationStore();
-    const conflictsCount = useWorkflowStore(state => state.conflicts.length);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    const mainNavItems: { id: AppModule | 'conflicts'; label: string; icon: React.ComponentType<any> }[] = [
+    const mainNavItems: { id: AppModule; label: string; icon: React.ComponentType<any> }[] = [
         { id: 'sync', label: 'Sync Center', icon: LayoutDashboard },
-        { id: 'conflicts', label: 'Conflicts', icon: AlertTriangle },
-        { id: 'dev', label: 'DevSuite', icon: Code2 },
         { id: 'media', label: 'Media Hub', icon: Image },
         { id: 'backup', label: 'Smart Backup', icon: Archive },
     ];
@@ -60,17 +56,6 @@ export const Sidebar = () => {
                         >
                             <Icon className={clsx("w-5 h-5 shrink-0", isActive ? "text-yellow-500" : "text-zinc-500 group-hover:text-white")} />
                             {!isCollapsed && <span className="whitespace-nowrap overflow-hidden transition-all duration-300">{item.label}</span>}
-
-                            {item.id === 'conflicts' && conflictsCount > 0 && (
-                                <span className={clsx(
-                                    "absolute flex items-center justify-center bg-red-500 text-white font-bold rounded-full",
-                                    isCollapsed
-                                        ? "top-1 right-1 w-2.5 h-2.5 p-0 border border-zinc-900" // Dot for collapsed
-                                        : "right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5"
-                                )}>
-                                    {!isCollapsed && conflictsCount}
-                                </span>
-                            )}
                         </button>
                     );
                 })}

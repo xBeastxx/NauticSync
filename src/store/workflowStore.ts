@@ -25,20 +25,8 @@ export interface Workflow {
     icon?: string; // Lucide icon name
 }
 
-export interface ConflictItem {
-    id: string;
-    path: string;
-    originalPath: string;
-    filename: string;
-    folderPath: string;
-    modificationTime: Date;
-    size: number;
-    conflictType: 'sync-conflict';
-}
-
 interface WorkflowState {
     workflows: Workflow[];
-    conflicts: ConflictItem[];
     activeWorkflowId: string | null;
 
     createWorkflow: (name: string, description?: string) => string;
@@ -47,18 +35,13 @@ interface WorkflowState {
     removeFolderFromWorkflow: (workflowId: string, folderId: string) => void;
     removeWorkflow: (id: string) => void;
     setActiveWorkflow: (id: string | null) => void;
-
-    // Conflict Actions
-    scanAllConflicts: () => Promise<void>;
-    resolveConflict: (conflict: ConflictItem, strategy: 'keep-mine' | 'keep-theirs') => Promise<void>;
 }
 
 export const useWorkflowStore = create<WorkflowState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             workflows: [],
             activeWorkflowId: null,
-            conflicts: [],
 
             createWorkflow: (name, description) => {
                 const id = uuidv4();
@@ -113,39 +96,7 @@ export const useWorkflowStore = create<WorkflowState>()(
                 }));
             },
 
-            setActiveWorkflow: (id) => set({ activeWorkflowId: id }),
-
-            scanAllConflicts: async () => {
-                const state = get();
-                // Aggregate all folders from all workflows
-                const allFolders = state.workflows.flatMap(w => w.folders.map(f => f.path));
-                const uniqueFolders = [...new Set(allFolders)];
-
-                let allConflicts: ConflictItem[] = [];
-
-                for (const folder of uniqueFolders) {
-                    try {
-                        const conflicts = await window.electronAPI.scanConflicts(folder);
-                        allConflicts = [...allConflicts, ...conflicts];
-                    } catch (err) {
-                        console.error("Failed to scan conflicts for folder", folder, err);
-                    }
-                }
-                set({ conflicts: allConflicts });
-            },
-
-            resolveConflict: async (conflict, strategy) => {
-                try {
-                    await window.electronAPI.resolveConflict(conflict.path, strategy);
-                    // Remove from local state immediately
-                    set((state) => ({
-                        conflicts: state.conflicts.filter(c => c.id !== conflict.id)
-                    }));
-                } catch (err) {
-                    console.error("Failed to resolve conflict", err);
-                    throw err;
-                }
-            }
+            setActiveWorkflow: (id) => set({ activeWorkflowId: id })
         }),
         {
             name: 'syncmaster-workflows',

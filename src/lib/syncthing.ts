@@ -86,6 +86,35 @@ export class SyncthingClient {
         };
         return this.setConfig(newConfig);
     }
+
+    async addFolder(folderConfig: { id: string; label: string; path: string; devices: string[]; type?: 'sendreceive' | 'sendonly' | 'receiveonly' }) {
+        const currentConfig = await this.getConfig();
+
+        // Check if folder already exists
+        if (currentConfig.folders.some((f: any) => f.id === folderConfig.id || f.path === folderConfig.path)) {
+            throw new Error("Folder with this ID or Path already exists.");
+        }
+
+        const newFolder = {
+            id: folderConfig.id,
+            label: folderConfig.label,
+            path: folderConfig.path,
+            type: folderConfig.type || 'sendreceive',
+            devices: folderConfig.devices.map(deviceId => ({ deviceID: deviceId })),
+            rescanIntervalS: 3600,
+            fsWatcherEnabled: true,
+            fsWatcherDelayS: 10,
+            ignorePerms: false,
+            autoNormalize: true
+        };
+
+        const newConfig = {
+            ...currentConfig,
+            folders: [...currentConfig.folders, newFolder]
+        };
+
+        return this.setConfig(newConfig);
+    }
 }
 
 export const syncthing = new SyncthingClient();

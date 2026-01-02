@@ -7,7 +7,7 @@ export interface MediaFile {
     id: string;
     path: string;
     name: string;
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'audio' | 'model';
     extension: string;
     size: number;
     modifiedTime: Date;
@@ -19,6 +19,8 @@ export interface MediaFile {
  */
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico'];
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.wmv', '.flv'];
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.wma'];
+const MODEL_EXTENSIONS = ['.obj', '.fbx', '.glb', '.gltf', '.stl', '.blend', '.dae'];
 
 export async function scanMediaFiles(folderPath: string, ignorePatterns: string[] = []): Promise<MediaFile[]> {
     const results: MediaFile[] = [];
@@ -54,12 +56,16 @@ export async function scanMediaFiles(folderPath: string, ignorePatterns: string[
                     await scan(fullPath);
                 } else if (entry.isFile()) {
                     const ext = path.extname(entry.name).toLowerCase();
-                    let type: 'image' | 'video' | null = null;
+                    let type: 'image' | 'video' | 'audio' | 'model' | null = null;
 
                     if (IMAGE_EXTENSIONS.includes(ext)) {
                         type = 'image';
                     } else if (VIDEO_EXTENSIONS.includes(ext)) {
                         type = 'video';
+                    } else if (AUDIO_EXTENSIONS.includes(ext)) {
+                        type = 'audio';
+                    } else if (MODEL_EXTENSIONS.includes(ext)) {
+                        type = 'model';
                     }
 
                     if (type) {

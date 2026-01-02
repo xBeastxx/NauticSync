@@ -2,6 +2,19 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
+ * Default patterns that should ALWAYS be ignored in Syncthing
+ * This prevents Syncthing from conflicting with Git
+ */
+export const DEFAULT_STIGNORE_PATTERNS = [
+    '.git',
+    '.gitignore',
+    'node_modules',
+    '.DS_Store',
+    'Thumbs.db',
+    '*.sync-conflict-*' // Don't sync conflict files themselves
+];
+
+/**
  * Parse .gitignore file and return array of patterns
  */
 export async function parseGitignore(folderPath: string): Promise<string[]> {
@@ -62,13 +75,14 @@ export async function writeStignore(folderPath: string, patterns: string[]): Pro
 
 /**
  * Merge gitignore patterns into stignore (without duplicates)
+ * Always includes DEFAULT_STIGNORE_PATTERNS to prevent Git/Syncthing conflicts
  */
 export async function mergeIgnores(folderPath: string, additionalPatterns: string[]): Promise<string[]> {
     const existing = await getStignore(folderPath);
     const converted = convertToStignore(additionalPatterns);
 
-    // Combine and dedupe
-    const combined = [...new Set([...existing, ...converted])];
+    // Combine defaults + existing + new, then dedupe
+    const combined = [...new Set([...DEFAULT_STIGNORE_PATTERNS, ...existing, ...converted])];
 
     await writeStignore(folderPath, combined);
     return combined;

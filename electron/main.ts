@@ -3,8 +3,6 @@ import path from 'path';
 import { SyncthingInstaller } from './services/installer';
 import { SyncthingRunner } from './services/runner';
 import { FileSystemService } from './services/filesystem';
-import { GitService } from './services/git';
-import { GitHubService } from './services/github';
 // ... (existing imports)
 
 // ... (existing helper code)
@@ -64,9 +62,6 @@ const createWindow = () => {
 app.on('ready', async () => {
     createWindow();
     const fsService = new FileSystemService();
-    const gitService = new GitService();
-    const githubService = new GitHubService();
-    await githubService.init();
 
     // IPC Handlers
     ipcMain.handle('get-syncthing-config', () => {
@@ -77,93 +72,11 @@ app.on('ready', async () => {
         };
     });
 
-    // ... (existing FS handlers)
-
-    // GitHub Handlers
-    ipcMain.handle('github-login', async (event, token) => {
-        return await githubService.login(token);
-    });
-
-    ipcMain.handle('github-logout', async () => {
-        return await githubService.logout();
-    });
-
-    ipcMain.handle('github-user', async () => {
-        return await githubService.getUser();
-    });
-
-    ipcMain.handle('github-repos', async (event, page, perPage) => {
-        return await githubService.getRepos(page, perPage);
-    });
-
+    // FS handlers
     ipcMain.handle('read-directory', async (event, dirPath) => {
         return await fsService.readDirectory(dirPath);
     });
 
-    // Git Handlers
-    // ... (rest of the file)
-
-    // Git Handlers
-    ipcMain.handle('git-status', async (event, repoPath) => {
-        return await gitService.getStatus(repoPath);
-    });
-
-    ipcMain.handle('git-log', async (event, repoPath) => {
-        return await gitService.getLog(repoPath);
-    });
-
-    ipcMain.handle('git-init', async (event, repoPath) => {
-        return await gitService.initRepo(repoPath);
-    });
-
-    ipcMain.handle('git-stage', async (event, { repoPath, filepath }) => {
-        return await gitService.addToStage(repoPath, filepath);
-    });
-
-    ipcMain.handle('git-unstage', async (event, { repoPath, filepath }) => {
-        return await gitService.removeFromStage(repoPath, filepath);
-    });
-
-    ipcMain.handle('git-commit', async (event, { repoPath, message, author }) => {
-        return await gitService.commitChanges(repoPath, message, author);
-    });
-
-    ipcMain.handle('git-branches', async (event, repoPath) => {
-        return await gitService.getBranches(repoPath);
-    });
-
-    ipcMain.handle('git-graph-data', async (event, repoPath) => {
-        return await gitService.getGraphData(repoPath);
-    });
-
-    ipcMain.handle('git-push', async (event, repoPath) => {
-        return await gitService.pushToRemote(repoPath);
-    });
-
-    ipcMain.handle('git-pull', async (event, repoPath) => {
-        return await gitService.pullFromRemote(repoPath);
-    });
-
-    ipcMain.handle('get-repo-contents', async (event, { owner, repo, path }) => {
-        // Use the existing githubService instance
-        return await githubService.getRepoContents(owner, repo, path);
-    });
-
-    ipcMain.handle('download-file', async (event, { url, targetPath }) => {
-        // Use the existing githubService instance
-        return await githubService.downloadFile(url, targetPath);
-    });
-
-    // Conflict Handlers
-    ipcMain.handle('scan-conflicts', async (event, folderPath) => {
-        const { conflictService } = await import('./services/conflictService');
-        return await conflictService.scanFolder(folderPath);
-    });
-
-    ipcMain.handle('resolve-conflict', async (event, { conflictPath, strategy }) => {
-        const { conflictService } = await import('./services/conflictService');
-        return await conflictService.resolveConflict(conflictPath, strategy);
-    });
 
     // Profile Detection
     ipcMain.handle('detect-profile', async (event, folderPath: string) => {
@@ -218,9 +131,98 @@ app.on('ready', async () => {
         await moveToVersions(filePath, folderPath);
     });
 
+    ipcMain.handle('read-file', async (_, filePath) => {
+        try {
+            const fs = await import('fs');
+            // Security check: ensure file exists
+            await fs.promises.access(filePath);
+
+            // Limit size to avoid memory issues (e.g. 10MB)
+            const stats = await fs.promises.stat(filePath);
+            if (stats.size > 10 * 1024 * 1024) {
+                throw new Error("File too large to preview");
+            }
+
+            // Check if binary or text
+            const content = await fs.promises.readFile(filePath, 'utf-8');
+            return content;
+        } catch (error) {
+            console.error('Failed to read file:', error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('write-file', async (_, { filePath, content }) => {
+        try {
+            const fs = await import('fs');
+            await fs.promises.writeFile(filePath, content, 'utf-8');
+        } catch (error) {
+            console.error('Failed to write file:', error);
+            throw error;
+        }
+    });
+
     // Window Controls
+    ipcMain.handle('show-save-dialog', async (event, defaultName) => {
+        const { dialog } = require('electron');
+        const { filePath } = await dialog.showSaveDialog(mainWindow, {
+            defaultPath: defaultName,
+            properties: ['createDirectory', 'showOverwriteConfirmation']
+        });
+        return filePath;
+    });
+
+    ipcMain.handle('open-path', async (event, pathStr) => {
+        const { shell } = require('electron');
+        return await shell.openPath(pathStr);
+    });
+
     ipcMain.handle('close-window', () => {
         mainWindow?.close();
+    });
+
+    ipcMain.handle('minimize-window', () => {
+        mainWindow?.minimize();
+    });
+
+    ipcMain.handle('toggle-maximize-window', () => {
+        if (!mainWindow) return;
+        if (mainWindow.isFullScreen()) {
+            mainWindow.setFullScreen(false);
+        } else {
+            mainWindow.setFullScreen(true);
+        }
+    });
+
+    // Imports Workflow Handlers
+    ipcMain.handle('list-imports', async (event, { projectPath, subPath }) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().listImports(projectPath, subPath);
+    });
+
+    ipcMain.handle('read-import', async (event, { projectPath, relativePath }) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().readImport(projectPath, relativePath);
+    });
+
+    ipcMain.handle('delete-import', async (event, { projectPath, relativePath }) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().deleteImport(projectPath, relativePath);
+    });
+
+    ipcMain.handle('promote-import', async (event, { projectPath, relativePath, destPath }) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().promoteImport(projectPath, relativePath, destPath);
+    });
+
+    ipcMain.handle('ensure-imports-dir', async (event, projectPath) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().ensureImportsDir(projectPath);
+    });
+
+    ipcMain.handle('download-import', async (event, { projectPath, fileName, url }) => {
+        const { ImportsService } = await import('./services/imports');
+        return await new ImportsService().downloadImport(projectPath, fileName, url);
     });
 
     ipcMain.handle('open-directory', async () => {

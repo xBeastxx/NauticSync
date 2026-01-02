@@ -49,4 +49,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Window Controls
     closeWindow: () => ipcRenderer.invoke('close-window'),
+    minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+    toggleMaximizeWindow: () => ipcRenderer.invoke('toggle-maximize-window'),
+    showSaveDialog: (defaultName: string) => ipcRenderer.invoke('show-save-dialog', defaultName),
+    openPath: (path: string) => ipcRenderer.invoke('open-path', path),
+    readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+    writeFile: (path: string, content: string) => ipcRenderer.invoke('write-file', { filePath: path, content }),
+
+    // Imports
+    listImports: (projectPath: string, subPath?: string) => ipcRenderer.invoke('list-imports', { projectPath, subPath }),
+    readImport: (projectPath: string, relativePath: string) => ipcRenderer.invoke('read-import', { projectPath, relativePath }),
+    deleteImport: (projectPath: string, relativePath: string) => ipcRenderer.invoke('delete-import', { projectPath, relativePath }),
+    promoteImport: (projectPath: string, relativePath: string, destPath: string) => ipcRenderer.invoke('promote-import', { projectPath, relativePath, destPath }),
+    ensureImportsDir: (projectPath: string) => ipcRenderer.invoke('ensure-imports-dir', projectPath),
+    downloadImport: (projectPath: string, fileName: string, url: string) => ipcRenderer.invoke('download-import', { projectPath, fileName, url }),
+    downloadImportFolder: (projectPath: string, owner: string, repo: string, path: string, targetDir?: string) => ipcRenderer.invoke('download-import-folder', { projectPath, owner, repo, path, targetDir }),
+
+    // Notifications
 });

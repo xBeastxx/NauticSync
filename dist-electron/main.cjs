@@ -28,82 +28,6 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// electron/services/conflictService.ts
-var conflictService_exports = {};
-__export(conflictService_exports, {
-  ConflictService: () => ConflictService,
-  conflictService: () => conflictService
-});
-var import_fs5, path5, CONFLICT_REGEX, ConflictService, conflictService;
-var init_conflictService = __esm({
-  "electron/services/conflictService.ts"() {
-    import_fs5 = require("fs");
-    path5 = __toESM(require("path"), 1);
-    CONFLICT_REGEX = /^(.*)\.sync-conflict-(\d{8}-\d{6}-\w+)(\.[^.]+)?$/;
-    ConflictService = class {
-      async scanFolder(folderPath) {
-        const conflicts = [];
-        try {
-          await this.scanRecursively(folderPath, folderPath, conflicts);
-        } catch (error) {
-          console.error(`Error scanning for conflicts in ${folderPath}:`, error);
-        }
-        return conflicts;
-      }
-      async scanRecursively(currentPath, rootFolder, results) {
-        const entries = await import_fs5.promises.readdir(currentPath, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path5.join(currentPath, entry.name);
-          if (entry.isDirectory()) {
-            if (entry.name === ".stfolder" || entry.name === ".git" || entry.name === "node_modules") continue;
-            await this.scanRecursively(fullPath, rootFolder, results);
-          } else if (entry.isFile()) {
-            if (entry.name.includes(".sync-conflict-")) {
-              const match = entry.name.match(CONFLICT_REGEX);
-              if (match) {
-                try {
-                  const originalBase = match[1];
-                  const ext = match[3] || "";
-                  const originalFilename = originalBase + ext;
-                  const originalPath = path5.join(currentPath, originalFilename);
-                  const stats = await import_fs5.promises.stat(fullPath);
-                  results.push({
-                    id: fullPath,
-                    path: fullPath,
-                    originalPath,
-                    filename: originalFilename,
-                    // The name of the file it conflicts with
-                    folderPath: rootFolder,
-                    modificationTime: stats.mtime,
-                    size: stats.size,
-                    conflictType: "sync-conflict"
-                  });
-                } catch (err) {
-                  console.warn("Failed to process potential conflict file:", fullPath, err);
-                }
-              }
-            }
-          }
-        }
-      }
-      async resolveConflict(conflictPath, strategy) {
-        const match = path5.basename(conflictPath).match(CONFLICT_REGEX);
-        if (!match) throw new Error("Invalid conflict file path");
-        if (strategy === "keep-mine") {
-          await import_fs5.promises.unlink(conflictPath);
-        } else if (strategy === "keep-theirs") {
-          const originalBase = match[1];
-          const ext = match[3] || "";
-          const originalFilename = originalBase + ext;
-          const originalPath = path5.join(path5.dirname(conflictPath), originalFilename);
-          await import_fs5.promises.rename(conflictPath, originalPath);
-        }
-      }
-    };
-    conflictService = new ConflictService();
-  }
-});
-
 // electron/services/profileService.ts
 var profileService_exports = {};
 __export(profileService_exports, {
@@ -112,7 +36,7 @@ __export(profileService_exports, {
 });
 async function detectProfile(folderPath) {
   try {
-    const files = await fs6.promises.readdir(folderPath);
+    const files = await fs4.promises.readdir(folderPath);
     const fileSet = new Set(files);
     for (const profile of PROFILE_DETECTIONS) {
       for (const detectFile of profile.detectFiles) {
@@ -135,10 +59,10 @@ async function detectProfilesForFolders(folderPaths) {
   }
   return results;
 }
-var fs6, PROFILE_DETECTIONS;
+var fs4, PROFILE_DETECTIONS;
 var init_profileService = __esm({
   "electron/services/profileService.ts"() {
-    fs6 = __toESM(require("fs"), 1);
+    fs4 = __toESM(require("fs"), 1);
     PROFILE_DETECTIONS = [
       { id: "node", detectFiles: ["package.json"] },
       { id: "python", detectFiles: ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"] },
@@ -151,6 +75,7 @@ var init_profileService = __esm({
 // electron/services/ignoreParser.ts
 var ignoreParser_exports = {};
 __export(ignoreParser_exports, {
+  DEFAULT_STIGNORE_PATTERNS: () => DEFAULT_STIGNORE_PATTERNS,
   applyProfileIgnores: () => applyProfileIgnores,
   convertToStignore: () => convertToStignore,
   getStignore: () => getStignore,
@@ -160,9 +85,9 @@ __export(ignoreParser_exports, {
   writeStignore: () => writeStignore
 });
 async function parseGitignore(folderPath) {
-  const gitignorePath = path6.join(folderPath, ".gitignore");
+  const gitignorePath = path4.join(folderPath, ".gitignore");
   try {
-    const content = await fs7.promises.readFile(gitignorePath, "utf-8");
+    const content = await fs5.promises.readFile(gitignorePath, "utf-8");
     return content.split("\n").map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
   } catch {
     return [];
@@ -174,24 +99,24 @@ function convertToStignore(patterns) {
   });
 }
 async function getStignore(folderPath) {
-  const stignorePath = path6.join(folderPath, ".stignore");
+  const stignorePath = path4.join(folderPath, ".stignore");
   try {
-    const content = await fs7.promises.readFile(stignorePath, "utf-8");
+    const content = await fs5.promises.readFile(stignorePath, "utf-8");
     return content.split("\n").map((line) => line.trim()).filter((line) => line && !line.startsWith("//"));
   } catch {
     return [];
   }
 }
 async function writeStignore(folderPath, patterns) {
-  const stignorePath = path6.join(folderPath, ".stignore");
+  const stignorePath = path4.join(folderPath, ".stignore");
   const header = "// Auto-generated by SyncMaster\n// https://docs.syncthing.net/users/ignoring.html\n\n";
   const content = header + patterns.join("\n") + "\n";
-  await fs7.promises.writeFile(stignorePath, content, "utf-8");
+  await fs5.promises.writeFile(stignorePath, content, "utf-8");
 }
 async function mergeIgnores(folderPath, additionalPatterns) {
   const existing = await getStignore(folderPath);
   const converted = convertToStignore(additionalPatterns);
-  const combined = [.../* @__PURE__ */ new Set([...existing, ...converted])];
+  const combined = [.../* @__PURE__ */ new Set([...DEFAULT_STIGNORE_PATTERNS, ...existing, ...converted])];
   await writeStignore(folderPath, combined);
   return combined;
 }
@@ -207,11 +132,20 @@ async function applyProfileIgnores(folderPath, patterns) {
   const merged = await mergeIgnores(folderPath, patterns);
   return { applied: patterns.length, total: merged.length };
 }
-var fs7, path6;
+var fs5, path4, DEFAULT_STIGNORE_PATTERNS;
 var init_ignoreParser = __esm({
   "electron/services/ignoreParser.ts"() {
-    fs7 = __toESM(require("fs"), 1);
-    path6 = __toESM(require("path"), 1);
+    fs5 = __toESM(require("fs"), 1);
+    path4 = __toESM(require("path"), 1);
+    DEFAULT_STIGNORE_PATTERNS = [
+      ".git",
+      ".gitignore",
+      "node_modules",
+      ".DS_Store",
+      "Thumbs.db",
+      "*.sync-conflict-*"
+      // Don't sync conflict files themselves
+    ];
   }
 });
 
@@ -226,16 +160,16 @@ async function scanMediaFiles(folderPath, ignorePatterns = []) {
   const results = [];
   async function scan(dir) {
     try {
-      const entries = await fs8.promises.readdir(dir, { withFileTypes: true });
+      const entries = await fs6.promises.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const fullPath = path7.join(dir, entry.name);
-        const relativePath = path7.relative(folderPath, fullPath);
+        const fullPath = path5.join(dir, entry.name);
+        const relativePath = path5.relative(folderPath, fullPath);
         if (entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "__pycache__") {
           continue;
         }
         let isIgnored = false;
         try {
-          const normalizedPath = relativePath.split(path7.sep).join("/");
+          const normalizedPath = relativePath.split(path5.sep).join("/");
           isIgnored = ignorePatterns.some((pattern) => {
             return minimatch(normalizedPath, pattern, { dot: true, matchBase: true });
           });
@@ -245,16 +179,20 @@ async function scanMediaFiles(folderPath, ignorePatterns = []) {
         if (entry.isDirectory()) {
           await scan(fullPath);
         } else if (entry.isFile()) {
-          const ext = path7.extname(entry.name).toLowerCase();
+          const ext = path5.extname(entry.name).toLowerCase();
           let type = null;
           if (IMAGE_EXTENSIONS.includes(ext)) {
             type = "image";
           } else if (VIDEO_EXTENSIONS.includes(ext)) {
             type = "video";
+          } else if (AUDIO_EXTENSIONS.includes(ext)) {
+            type = "audio";
+          } else if (MODEL_EXTENSIONS.includes(ext)) {
+            type = "model";
           }
           if (type) {
             try {
-              const stats = await fs8.promises.stat(fullPath);
+              const stats = await fs6.promises.stat(fullPath);
               results.push({
                 id: Buffer.from(fullPath).toString("base64"),
                 path: fullPath,
@@ -281,7 +219,7 @@ async function scanMediaFiles(folderPath, ignorePatterns = []) {
 async function hashFile(filePath) {
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash("md5");
-    const stream = fs8.createReadStream(filePath);
+    const stream = fs6.createReadStream(filePath);
     stream.on("data", (data) => hash.update(data));
     stream.on("end", () => resolve(hash.digest("hex")));
     stream.on("error", reject);
@@ -308,15 +246,17 @@ async function findDuplicates(files) {
   }
   return duplicates;
 }
-var fs8, path7, crypto, minimatch, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS;
+var fs6, path5, crypto, minimatch, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, MODEL_EXTENSIONS;
 var init_mediaService = __esm({
   "electron/services/mediaService.ts"() {
-    fs8 = __toESM(require("fs"), 1);
-    path7 = __toESM(require("path"), 1);
+    fs6 = __toESM(require("fs"), 1);
+    path5 = __toESM(require("path"), 1);
     crypto = __toESM(require("crypto"), 1);
     ({ minimatch } = require("minimatch"));
     IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico"];
     VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".wmv", ".flv"];
+    AUDIO_EXTENSIONS = [".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac", ".wma"];
+    MODEL_EXTENSIONS = [".obj", ".fbx", ".glb", ".gltf", ".stl", ".blend", ".dae"];
   }
 });
 
@@ -344,25 +284,25 @@ function parseVersionTimestamp(filename) {
   };
 }
 async function getVersionedFiles(folderPath) {
-  const versionsPath = path8.join(folderPath, ".stversions");
+  const versionsPath = path6.join(folderPath, ".stversions");
   const results = [];
   async function scan(dir, relativePath = "") {
     try {
-      const entries = await fs9.promises.readdir(dir, { withFileTypes: true });
+      const entries = await fs7.promises.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const fullPath = path8.join(dir, entry.name);
-        const relPath = path8.join(relativePath, entry.name);
+        const fullPath = path6.join(dir, entry.name);
+        const relPath = path6.join(relativePath, entry.name);
         if (entry.isDirectory()) {
           await scan(fullPath, relPath);
         } else if (entry.isFile()) {
           const parsed = parseVersionTimestamp(entry.name);
           if (parsed) {
             try {
-              const stats = await fs9.promises.stat(fullPath);
+              const stats = await fs7.promises.stat(fullPath);
               results.push({
                 id: Buffer.from(fullPath).toString("base64"),
                 originalName: parsed.originalName,
-                originalPath: path8.join(folderPath, relativePath, parsed.originalName),
+                originalPath: path6.join(folderPath, relativePath, parsed.originalName),
                 versionPath: fullPath,
                 timestamp: parsed.timestamp,
                 size: stats.size
@@ -382,14 +322,14 @@ async function getVersionedFiles(folderPath) {
 }
 async function restoreVersion(versionPath, originalPath) {
   try {
-    const stats = await fs9.promises.stat(originalPath);
+    const stats = await fs7.promises.stat(originalPath);
     if (stats.isFile()) {
       const backupPath = originalPath + ".backup";
-      await fs9.promises.copyFile(originalPath, backupPath);
+      await fs7.promises.copyFile(originalPath, backupPath);
     }
   } catch {
   }
-  await fs9.promises.copyFile(versionPath, originalPath);
+  await fs7.promises.copyFile(versionPath, originalPath);
 }
 async function getFileHistory(folderPath, fileName) {
   const allVersions = await getVersionedFiles(folderPath);
@@ -406,26 +346,152 @@ function generateVersionTimestamp() {
   return `${year}${month}${day}-${hours}${minutes}${seconds}`;
 }
 async function moveToVersions(filePath, folderPath) {
-  const relativePath = path8.relative(folderPath, filePath);
-  const dirName = path8.dirname(relativePath);
-  const fileName = path8.basename(filePath);
-  const ext = path8.extname(fileName);
-  const baseName = path8.basename(fileName, ext);
+  const relativePath = path6.relative(folderPath, filePath);
+  const dirName = path6.dirname(relativePath);
+  const fileName = path6.basename(filePath);
+  const ext = path6.extname(fileName);
+  const baseName = path6.basename(fileName, ext);
   const timestamp = generateVersionTimestamp();
   const versionedName = `${baseName}~${timestamp}${ext}`;
-  const versionsDir = path8.join(folderPath, ".stversions", dirName);
-  await fs9.promises.mkdir(versionsDir, { recursive: true });
-  const versionPath = path8.join(versionsDir, versionedName);
-  await fs9.promises.copyFile(filePath, versionPath);
+  const versionsDir = path6.join(folderPath, ".stversions", dirName);
+  await fs7.promises.mkdir(versionsDir, { recursive: true });
+  const versionPath = path6.join(versionsDir, versionedName);
+  await fs7.promises.copyFile(filePath, versionPath);
   console.log(`Backed up ${filePath} to ${versionPath}`);
-  await fs9.promises.unlink(filePath);
+  await fs7.promises.unlink(filePath);
 }
-var fs9, path8, VERSION_PATTERN;
+var fs7, path6, VERSION_PATTERN;
 var init_backupService = __esm({
   "electron/services/backupService.ts"() {
-    fs9 = __toESM(require("fs"), 1);
-    path8 = __toESM(require("path"), 1);
+    fs7 = __toESM(require("fs"), 1);
+    path6 = __toESM(require("path"), 1);
     VERSION_PATTERN = /^(.+)~(\d{8}-\d{6})(\.[^.]+)?$/;
+  }
+});
+
+// electron/services/imports.ts
+var imports_exports = {};
+__export(imports_exports, {
+  ImportsService: () => ImportsService
+});
+var import_fs4, import_path4, ImportsService;
+var init_imports = __esm({
+  "electron/services/imports.ts"() {
+    import_fs4 = __toESM(require("fs"), 1);
+    import_path4 = __toESM(require("path"), 1);
+    ImportsService = class {
+      async ensureImportsDir(projectPath) {
+        const importsDir = import_path4.default.join(projectPath, ".imports");
+        if (!import_fs4.default.existsSync(importsDir)) {
+          import_fs4.default.mkdirSync(importsDir);
+        }
+        const gitignorePath = import_path4.default.join(projectPath, ".gitignore");
+        if (import_fs4.default.existsSync(gitignorePath)) {
+          const content = import_fs4.default.readFileSync(gitignorePath, "utf8");
+          if (!content.includes(".imports/")) {
+            import_fs4.default.appendFileSync(gitignorePath, "\n# MegaSync Imports\n.imports/\n");
+          }
+        } else {
+          import_fs4.default.writeFileSync(gitignorePath, "# MegaSync Imports\n.imports/\n");
+        }
+        return importsDir;
+      }
+      async saveImport(projectPath, fileName, content, isBinary = false) {
+        const importsDir = await this.ensureImportsDir(projectPath);
+        const filePath = import_path4.default.join(importsDir, fileName);
+        const fileDir = import_path4.default.dirname(filePath);
+        if (!import_fs4.default.existsSync(fileDir)) {
+          import_fs4.default.mkdirSync(fileDir, { recursive: true });
+        }
+        if (isBinary) {
+          import_fs4.default.writeFileSync(filePath, content);
+        } else {
+          import_fs4.default.writeFileSync(filePath, content, "utf8");
+        }
+        return filePath;
+      }
+      // List immediate children of .imports/subPath
+      async listImports(projectPath, subPath = "") {
+        const importsDir = import_path4.default.join(projectPath, ".imports", subPath);
+        if (!import_fs4.default.existsSync(importsDir)) return [];
+        const dirStat = import_fs4.default.statSync(importsDir);
+        if (!dirStat.isDirectory()) return [];
+        const items = import_fs4.default.readdirSync(importsDir);
+        const result = items.map((name) => {
+          const fullPath = import_path4.default.join(importsDir, name);
+          const stat = import_fs4.default.statSync(fullPath);
+          const relativePath = import_path4.default.join(subPath, name).split(import_path4.default.sep).join("/");
+          return {
+            name,
+            path: relativePath,
+            fullPath,
+            size: stat.size,
+            updatedAt: stat.mtime,
+            type: stat.isDirectory() ? "dir" : "file"
+          };
+        });
+        return result.sort((a, b) => {
+          if (a.type === b.type) return a.name.localeCompare(b.name);
+          return a.type === "dir" ? -1 : 1;
+        });
+      }
+      async readImport(projectPath, relativePath) {
+        const target = import_path4.default.join(projectPath, ".imports", relativePath);
+        if (import_fs4.default.existsSync(target)) {
+          return import_fs4.default.readFileSync(target, "utf8");
+        }
+        throw new Error("File not found");
+      }
+      async deleteImport(projectPath, relativePath) {
+        const target = import_path4.default.join(projectPath, ".imports", relativePath);
+        if (import_fs4.default.existsSync(target)) {
+          const stat = import_fs4.default.statSync(target);
+          if (stat.isDirectory()) {
+            import_fs4.default.rmSync(target, { recursive: true, force: true });
+          } else {
+            import_fs4.default.unlinkSync(target);
+          }
+          return true;
+        }
+        return false;
+      }
+      async promoteImport(projectPath, relativePath, destPath) {
+        const source = import_path4.default.join(projectPath, ".imports", relativePath);
+        const destination = import_path4.default.join(projectPath, destPath);
+        const destDir = import_path4.default.dirname(destination);
+        if (!import_fs4.default.existsSync(destDir)) {
+          import_fs4.default.mkdirSync(destDir, { recursive: true });
+        }
+        import_fs4.default.renameSync(source, destination);
+        return true;
+      }
+      async downloadImport(projectPath, fileName, url) {
+        const importsDir = await this.ensureImportsDir(projectPath);
+        const targetPath = import_path4.default.join(importsDir, fileName);
+        const fileDir = import_path4.default.dirname(targetPath);
+        if (!import_fs4.default.existsSync(fileDir)) {
+          import_fs4.default.mkdirSync(fileDir, { recursive: true });
+        }
+        try {
+          const axios2 = await import("axios");
+          const fs9 = await import("fs");
+          const response = await axios2.default({
+            url,
+            method: "GET",
+            responseType: "stream"
+          });
+          const writer = fs9.createWriteStream(targetPath);
+          response.data.pipe(writer);
+          return new Promise((resolve, reject) => {
+            writer.on("finish", () => resolve(targetPath));
+            writer.on("error", reject);
+          });
+        } catch (error) {
+          console.error("Import download failed:", error);
+          throw error;
+        }
+      }
+    };
   }
 });
 
@@ -609,251 +675,6 @@ var FileSystemService = class {
   }
 };
 
-// electron/services/git.ts
-var import_isomorphic_git = __toESM(require("isomorphic-git"), 1);
-var import_fs4 = __toESM(require("fs"), 1);
-var import_path4 = __toESM(require("path"), 1);
-var GitService = class {
-  async getStatus(repoPath) {
-    try {
-      const files = await import_isomorphic_git.default.statusMatrix({ fs: import_fs4.default, dir: repoPath });
-      const entries = files.map((row) => {
-        const [filepath, head, workdir, stage] = row;
-        let status = "unmodified";
-        if (head === 1 && workdir === 0) status = "deleted";
-        if (head === 0 && workdir === 1) status = "untracked";
-        if (head === 1 && workdir === 2) status = "modified";
-        if (stage === 1 && head === 1 && workdir === 2) status = "*modified";
-        if (stage === 1 && head === 0 && workdir === 1) status = "added";
-        return { path: filepath, status };
-      }).filter((f) => f.status !== "unmodified");
-      return entries;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return [];
-      }
-      throw error;
-    }
-  }
-  async initRepo(repoPath) {
-    await import_isomorphic_git.default.init({ fs: import_fs4.default, dir: repoPath });
-  }
-  async addToStage(repoPath, filepath) {
-    await import_isomorphic_git.default.add({ fs: import_fs4.default, dir: repoPath, filepath });
-  }
-  async removeFromStage(repoPath, filepath) {
-    await import_isomorphic_git.default.resetIndex({ fs: import_fs4.default, dir: repoPath, filepath });
-  }
-  async commitChanges(repoPath, message, author) {
-    await import_isomorphic_git.default.commit({
-      fs: import_fs4.default,
-      dir: repoPath,
-      message,
-      author
-    });
-  }
-  async getBranches(repoPath) {
-    try {
-      return await import_isomorphic_git.default.listBranches({ fs: import_fs4.default, dir: repoPath });
-    } catch (error) {
-      return [];
-    }
-  }
-  async getLog(repoPath, depth = 20) {
-    try {
-      const commits = await import_isomorphic_git.default.log({ fs: import_fs4.default, dir: repoPath, depth });
-      return commits.map((c) => ({
-        oid: c.oid,
-        message: c.commit.message,
-        author: c.commit.author.name,
-        timestamp: c.commit.author.timestamp,
-        parent: c.commit.parent
-      }));
-    } catch (error) {
-      return [];
-    }
-  }
-  // Fetch logs from all local branches to build a complete graph
-  async getGraphData(repoPath, depth = 50) {
-    try {
-      const branches = await import_isomorphic_git.default.listBranches({ fs: import_fs4.default, dir: repoPath });
-      let allCommits = /* @__PURE__ */ new Map();
-      for (const branch of branches) {
-        try {
-          const commits = await import_isomorphic_git.default.log({ fs: import_fs4.default, dir: repoPath, ref: branch, depth });
-          for (let i = 0; i < commits.length; i++) {
-            const c = commits[i];
-            if (!allCommits.has(c.oid)) {
-              allCommits.set(c.oid, {
-                oid: c.oid,
-                message: c.commit.message,
-                author: c.commit.author.name,
-                timestamp: c.commit.author.timestamp,
-                parents: c.commit.parent,
-                refs: i === 0 ? [branch] : []
-                // Only tag the tip
-              });
-            } else {
-              if (i === 0) {
-                const existing = allCommits.get(c.oid);
-                if (!existing.refs.includes(branch)) {
-                  existing.refs.push(branch);
-                }
-              }
-            }
-          }
-        } catch (e) {
-        }
-      }
-      return Array.from(allCommits.values()).sort((a, b) => b.timestamp - a.timestamp);
-    } catch (error) {
-      console.error("Graph data error:", error);
-      return [];
-    }
-  }
-  // --- Decentralized Remote Logic ---
-  async ensureRemote(repoPath) {
-    const remotePath = import_path4.default.join(repoPath, ".megasync", "git-remote");
-    try {
-      await import_fs4.default.promises.mkdir(remotePath, { recursive: true });
-      try {
-        await import_isomorphic_git.default.resolveRef({ fs: import_fs4.default, dir: remotePath, ref: "HEAD" });
-      } catch (e) {
-        await import_isomorphic_git.default.init({ fs: import_fs4.default, dir: remotePath, bare: true });
-      }
-      try {
-        await import_isomorphic_git.default.deleteRemote({ fs: import_fs4.default, dir: repoPath, remote: "origin" });
-      } catch (e) {
-      }
-      await import_isomorphic_git.default.addRemote({ fs: import_fs4.default, dir: repoPath, remote: "origin", url: remotePath });
-      return remotePath;
-    } catch (err) {
-      console.error("Failed to ensure remote:", err);
-      throw err;
-    }
-  }
-  async pushToRemote(repoPath) {
-    await this.ensureRemote(repoPath);
-    await import_isomorphic_git.default.push({
-      fs: import_fs4.default,
-      dir: repoPath,
-      remote: "origin",
-      ref: "master",
-      // TODO: Make dynamic based on current branch
-      force: false
-    });
-  }
-  async pullFromRemote(repoPath) {
-    await this.ensureRemote(repoPath);
-    await import_isomorphic_git.default.pull({
-      fs: import_fs4.default,
-      dir: repoPath,
-      remote: "origin",
-      ref: "master",
-      singleBranch: true,
-      author: { name: "MegaSync", email: "user@megasync.local" }
-    });
-  }
-};
-
-// electron/services/github.ts
-var import_rest = require("@octokit/rest");
-var GitHubService = class {
-  octokit = null;
-  store = null;
-  // Dynamically loaded
-  constructor() {
-  }
-  async init() {
-    const { default: Store } = await import("electron-store");
-    this.store = new Store({
-      name: "github-config",
-      defaults: { token: null }
-    });
-    const existingToken = this.store.get("token");
-    if (existingToken) {
-      this.initializeClient(existingToken);
-    }
-  }
-  initializeClient(token) {
-    this.octokit = new import_rest.Octokit({ auth: token });
-  }
-  async login(token) {
-    try {
-      const octokit = new import_rest.Octokit({ auth: token });
-      const { data: user } = await octokit.users.getAuthenticated();
-      this.store.set("token", token);
-      this.octokit = octokit;
-      return user;
-    } catch (error) {
-      console.error("GitHub Login Failed:", error);
-      throw new Error("Invalid Token or Network Error");
-    }
-  }
-  async logout() {
-    this.store.delete("token");
-    this.octokit = null;
-  }
-  async getUser() {
-    if (!this.octokit) return null;
-    try {
-      const { data } = await this.octokit.users.getAuthenticated();
-      return data;
-    } catch (error) {
-      console.error("Failed to get user:", error);
-      return null;
-    }
-  }
-  async getRepos(page = 1, perPage = 30) {
-    if (!this.octokit) throw new Error("Not authenticated");
-    try {
-      const { data } = await this.octokit.repos.listForAuthenticatedUser({
-        sort: "updated",
-        per_page: perPage,
-        page,
-        affiliation: "owner,collaborator,organization_member"
-      });
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  }
-  async getRepoContents(owner, repo, path10 = "") {
-    if (!this.octokit) throw new Error("Not authenticated");
-    try {
-      const { data } = await this.octokit.repos.getContent({
-        owner,
-        repo,
-        path: path10
-      });
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch contents:", error);
-      throw error;
-    }
-  }
-  async downloadFile(url, targetPath) {
-    try {
-      const axios2 = await import("axios");
-      const fs10 = await import("fs");
-      const response = await axios2.default({
-        url,
-        method: "GET",
-        responseType: "stream"
-      });
-      const writer = fs10.createWriteStream(targetPath);
-      response.data.pipe(writer);
-      return new Promise((resolve, reject) => {
-        writer.on("finish", resolve);
-        writer.on("error", reject);
-      });
-    } catch (error) {
-      console.error("Download failed:", error);
-      throw error;
-    }
-  }
-};
-
 // electron/main.ts
 var mainWindow = null;
 var syncRunner = null;
@@ -901,9 +722,6 @@ var createWindow = () => {
 import_electron3.app.on("ready", async () => {
   createWindow();
   const fsService = new FileSystemService();
-  const gitService = new GitService();
-  const githubService = new GitHubService();
-  await githubService.init();
   import_electron3.ipcMain.handle("get-syncthing-config", () => {
     if (!syncRunner) return { apiKey: null, url: null };
     return {
@@ -911,64 +729,8 @@ import_electron3.app.on("ready", async () => {
       url: syncRunner.getUrl()
     };
   });
-  import_electron3.ipcMain.handle("github-login", async (event, token) => {
-    return await githubService.login(token);
-  });
-  import_electron3.ipcMain.handle("github-logout", async () => {
-    return await githubService.logout();
-  });
-  import_electron3.ipcMain.handle("github-user", async () => {
-    return await githubService.getUser();
-  });
-  import_electron3.ipcMain.handle("github-repos", async (event, page, perPage) => {
-    return await githubService.getRepos(page, perPage);
-  });
   import_electron3.ipcMain.handle("read-directory", async (event, dirPath) => {
     return await fsService.readDirectory(dirPath);
-  });
-  import_electron3.ipcMain.handle("git-status", async (event, repoPath) => {
-    return await gitService.getStatus(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-log", async (event, repoPath) => {
-    return await gitService.getLog(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-init", async (event, repoPath) => {
-    return await gitService.initRepo(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-stage", async (event, { repoPath, filepath }) => {
-    return await gitService.addToStage(repoPath, filepath);
-  });
-  import_electron3.ipcMain.handle("git-unstage", async (event, { repoPath, filepath }) => {
-    return await gitService.removeFromStage(repoPath, filepath);
-  });
-  import_electron3.ipcMain.handle("git-commit", async (event, { repoPath, message, author }) => {
-    return await gitService.commitChanges(repoPath, message, author);
-  });
-  import_electron3.ipcMain.handle("git-branches", async (event, repoPath) => {
-    return await gitService.getBranches(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-graph-data", async (event, repoPath) => {
-    return await gitService.getGraphData(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-push", async (event, repoPath) => {
-    return await gitService.pushToRemote(repoPath);
-  });
-  import_electron3.ipcMain.handle("git-pull", async (event, repoPath) => {
-    return await gitService.pullFromRemote(repoPath);
-  });
-  import_electron3.ipcMain.handle("get-repo-contents", async (event, { owner, repo, path: path10 }) => {
-    return await githubService.getRepoContents(owner, repo, path10);
-  });
-  import_electron3.ipcMain.handle("download-file", async (event, { url, targetPath }) => {
-    return await githubService.downloadFile(url, targetPath);
-  });
-  import_electron3.ipcMain.handle("scan-conflicts", async (event, folderPath) => {
-    const { conflictService: conflictService2 } = await Promise.resolve().then(() => (init_conflictService(), conflictService_exports));
-    return await conflictService2.scanFolder(folderPath);
-  });
-  import_electron3.ipcMain.handle("resolve-conflict", async (event, { conflictPath, strategy }) => {
-    const { conflictService: conflictService2 } = await Promise.resolve().then(() => (init_conflictService(), conflictService_exports));
-    return await conflictService2.resolveConflict(conflictPath, strategy);
   });
   import_electron3.ipcMain.handle("detect-profile", async (event, folderPath) => {
     const { detectProfile: detectProfile2 } = await Promise.resolve().then(() => (init_profileService(), profileService_exports));
@@ -1001,15 +763,86 @@ import_electron3.app.on("ready", async () => {
     return await restoreVersion2(versionPath, originalPath);
   });
   import_electron3.ipcMain.handle("delete-file", async (event, filePath) => {
-    const fs10 = await import("fs");
-    await fs10.promises.unlink(filePath);
+    const fs9 = await import("fs");
+    await fs9.promises.unlink(filePath);
   });
   import_electron3.ipcMain.handle("delete-file-with-backup", async (event, { filePath, folderPath }) => {
     const { moveToVersions: moveToVersions2 } = await Promise.resolve().then(() => (init_backupService(), backupService_exports));
     await moveToVersions2(filePath, folderPath);
   });
+  import_electron3.ipcMain.handle("read-file", async (_, filePath) => {
+    try {
+      const fs9 = await import("fs");
+      await fs9.promises.access(filePath);
+      const stats = await fs9.promises.stat(filePath);
+      if (stats.size > 10 * 1024 * 1024) {
+        throw new Error("File too large to preview");
+      }
+      const content = await fs9.promises.readFile(filePath, "utf-8");
+      return content;
+    } catch (error) {
+      console.error("Failed to read file:", error);
+      throw error;
+    }
+  });
+  import_electron3.ipcMain.handle("write-file", async (_, { filePath, content }) => {
+    try {
+      const fs9 = await import("fs");
+      await fs9.promises.writeFile(filePath, content, "utf-8");
+    } catch (error) {
+      console.error("Failed to write file:", error);
+      throw error;
+    }
+  });
+  import_electron3.ipcMain.handle("show-save-dialog", async (event, defaultName) => {
+    const { dialog: dialog2 } = require("electron");
+    const { filePath } = await dialog2.showSaveDialog(mainWindow, {
+      defaultPath: defaultName,
+      properties: ["createDirectory", "showOverwriteConfirmation"]
+    });
+    return filePath;
+  });
+  import_electron3.ipcMain.handle("open-path", async (event, pathStr) => {
+    const { shell } = require("electron");
+    return await shell.openPath(pathStr);
+  });
   import_electron3.ipcMain.handle("close-window", () => {
     mainWindow == null ? void 0 : mainWindow.close();
+  });
+  import_electron3.ipcMain.handle("minimize-window", () => {
+    mainWindow == null ? void 0 : mainWindow.minimize();
+  });
+  import_electron3.ipcMain.handle("toggle-maximize-window", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    } else {
+      mainWindow.setFullScreen(true);
+    }
+  });
+  import_electron3.ipcMain.handle("list-imports", async (event, { projectPath, subPath }) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().listImports(projectPath, subPath);
+  });
+  import_electron3.ipcMain.handle("read-import", async (event, { projectPath, relativePath }) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().readImport(projectPath, relativePath);
+  });
+  import_electron3.ipcMain.handle("delete-import", async (event, { projectPath, relativePath }) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().deleteImport(projectPath, relativePath);
+  });
+  import_electron3.ipcMain.handle("promote-import", async (event, { projectPath, relativePath, destPath }) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().promoteImport(projectPath, relativePath, destPath);
+  });
+  import_electron3.ipcMain.handle("ensure-imports-dir", async (event, projectPath) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().ensureImportsDir(projectPath);
+  });
+  import_electron3.ipcMain.handle("download-import", async (event, { projectPath, fileName, url }) => {
+    const { ImportsService: ImportsService2 } = await Promise.resolve().then(() => (init_imports(), imports_exports));
+    return await new ImportsService2().downloadImport(projectPath, fileName, url);
   });
   import_electron3.ipcMain.handle("open-directory", async () => {
     const { canceled, filePaths } = await import_electron3.dialog.showOpenDialog({

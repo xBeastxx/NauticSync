@@ -40,5 +40,20 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   deleteFile: (filePath) => import_electron.ipcRenderer.invoke("delete-file", filePath),
   deleteFileWithBackup: (filePath, folderPath) => import_electron.ipcRenderer.invoke("delete-file-with-backup", { filePath, folderPath }),
   // Window Controls
-  closeWindow: () => import_electron.ipcRenderer.invoke("close-window")
+  closeWindow: () => import_electron.ipcRenderer.invoke("close-window"),
+  minimizeWindow: () => import_electron.ipcRenderer.invoke("minimize-window"),
+  toggleMaximizeWindow: () => import_electron.ipcRenderer.invoke("toggle-maximize-window"),
+  showSaveDialog: (defaultName) => import_electron.ipcRenderer.invoke("show-save-dialog", defaultName),
+  openPath: (path) => import_electron.ipcRenderer.invoke("open-path", path),
+  readFile: (path) => import_electron.ipcRenderer.invoke("read-file", path),
+  writeFile: (path, content) => import_electron.ipcRenderer.invoke("write-file", { filePath: path, content }),
+  // Imports
+  listImports: (projectPath, subPath) => import_electron.ipcRenderer.invoke("list-imports", { projectPath, subPath }),
+  readImport: (projectPath, relativePath) => import_electron.ipcRenderer.invoke("read-import", { projectPath, relativePath }),
+  deleteImport: (projectPath, relativePath) => import_electron.ipcRenderer.invoke("delete-import", { projectPath, relativePath }),
+  promoteImport: (projectPath, relativePath, destPath) => import_electron.ipcRenderer.invoke("promote-import", { projectPath, relativePath, destPath }),
+  ensureImportsDir: (projectPath) => import_electron.ipcRenderer.invoke("ensure-imports-dir", projectPath),
+  downloadImport: (projectPath, fileName, url) => import_electron.ipcRenderer.invoke("download-import", { projectPath, fileName, url }),
+  downloadImportFolder: (projectPath, owner, repo, path, targetDir) => import_electron.ipcRenderer.invoke("download-import-folder", { projectPath, owner, repo, path, targetDir })
+  // Notifications
 });

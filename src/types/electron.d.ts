@@ -50,6 +50,21 @@ export interface ElectronAPI {
 
     // Window Controls
     closeWindow: () => Promise<void>;
+    minimizeWindow: () => Promise<void>;
+    toggleMaximizeWindow: () => Promise<void>;
+    showSaveDialog: (defaultName: string) => Promise<string | null>;
+    openPath: (path: string) => Promise<string>;
+    readFile: (path: string) => Promise<string>;
+    writeFile: (path: string, content: string) => Promise<void>;
+
+    // Imports Workflow
+    listImports: (projectPath: string, subPath?: string) => Promise<any[]>;
+    readImport: (projectPath: string, relativePath: string) => Promise<string>;
+    deleteImport: (projectPath: string, relativePath: string) => Promise<boolean>;
+    promoteImport: (projectPath: string, relativePath: string, destPath: string) => Promise<boolean>;
+    ensureImportsDir: (projectPath: string) => Promise<string>;
+    downloadImport: (projectPath: string, fileName: string, url: string) => Promise<string>;
+    downloadImportFolder: (projectPath: string, owner: string, repo: string, path: string, targetDir?: string) => Promise<boolean>;
 }
 
 declare global {
