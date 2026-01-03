@@ -75,7 +75,7 @@ Enable auto-start to launch NauticSync when you log in. Never worry about forget
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
@@ -119,7 +119,7 @@ npm run package
 
 ---
 
-## 🔧 Development
+##  Development
 
 ### Prerequisites
 - Node.js 20+
