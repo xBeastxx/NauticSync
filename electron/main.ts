@@ -10,6 +10,8 @@ import { FileSystemService } from './services/filesystem';
 let mainWindow: BrowserWindow | null = null;
 let syncRunner: SyncthingRunner | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
+let store: any;
 
 const createWindow = () => {
     // Create the browser window.
@@ -25,6 +27,18 @@ const createWindow = () => {
         frame: false, // Custom frame for modern look
         backgroundColor: '#000000',
         show: false, // Don't show until ready
+        icon: path.join(__dirname, '../public/icon.ico'),
+    });
+
+    // Handle Close to Tray
+    mainWindow.on('close', (event) => {
+        const closeToTray = store?.get('closeToTray', true) ?? true;
+        if (!isQuitting && closeToTray) {
+            event.preventDefault();
+            mainWindow?.hide();
+            return false;
+        }
+        return true;
     });
 
     // Test dev mode
@@ -96,6 +110,7 @@ const createTray = () => {
         {
             label: 'Quit',
             click: () => {
+                isQuitting = true;
                 app.quit();
             }
         }
@@ -112,6 +127,10 @@ const createTray = () => {
 
 
 app.on('ready', async () => {
+    // Initialize store first
+    const { default: Store } = await import('electron-store');
+    store = new Store();
+
     createWindow();
     createTray();
     const fsService = new FileSystemService();
@@ -136,6 +155,16 @@ app.on('ready', async () => {
             openAtLogin: enabled,
             openAsHidden: false
         });
+        return enabled;
+    });
+
+    // Tray Settings
+    ipcMain.handle('get-close-to-tray', () => {
+        return store?.get('closeToTray', true) ?? true;
+    });
+
+    ipcMain.handle('set-close-to-tray', (event, enabled: boolean) => {
+        store?.set('closeToTray', enabled);
         return enabled;
     });
 

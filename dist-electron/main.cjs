@@ -837,6 +837,8 @@ var FileSystemService = class {
 var mainWindow = null;
 var syncRunner = null;
 var tray = null;
+var isQuitting = false;
+var store;
 var createWindow = () => {
   mainWindow = new import_electron3.BrowserWindow({
     width: 1200,
@@ -851,8 +853,18 @@ var createWindow = () => {
     frame: false,
     // Custom frame for modern look
     backgroundColor: "#000000",
-    show: false
+    show: false,
     // Don't show until ready
+    icon: import_path5.default.join(__dirname, "../public/icon.ico")
+  });
+  mainWindow.on("close", (event) => {
+    const closeToTray = (store == null ? void 0 : store.get("closeToTray", true)) ?? true;
+    if (!isQuitting && closeToTray) {
+      event.preventDefault();
+      mainWindow == null ? void 0 : mainWindow.hide();
+      return false;
+    }
+    return true;
   });
   const isDev = process.env.NODE_ENV === "development" || !import_electron3.app.isPackaged;
   if (isDev) {
@@ -909,6 +921,7 @@ var createTray = () => {
     {
       label: "Quit",
       click: () => {
+        isQuitting = true;
         import_electron3.app.quit();
       }
     }
@@ -920,6 +933,8 @@ var createTray = () => {
   });
 };
 import_electron3.app.on("ready", async () => {
+  const { default: Store } = await import("electron-store");
+  store = new Store();
   createWindow();
   createTray();
   const fsService = new FileSystemService();
@@ -939,6 +954,13 @@ import_electron3.app.on("ready", async () => {
       openAtLogin: enabled,
       openAsHidden: false
     });
+    return enabled;
+  });
+  import_electron3.ipcMain.handle("get-close-to-tray", () => {
+    return (store == null ? void 0 : store.get("closeToTray", true)) ?? true;
+  });
+  import_electron3.ipcMain.handle("set-close-to-tray", (event, enabled) => {
+    store == null ? void 0 : store.set("closeToTray", enabled);
     return enabled;
   });
   import_electron3.ipcMain.handle("read-directory", async (event, dirPath) => {

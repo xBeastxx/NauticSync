@@ -62,6 +62,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
     setAutoStart: (enabled: boolean) => ipcRenderer.invoke('set-auto-start', enabled),
 
+    // Tray Settings
+    getCloseToTray: () => ipcRenderer.invoke('get-close-to-tray'),
+    setCloseToTray: (enabled: boolean) => ipcRenderer.invoke('set-close-to-tray', enabled),
+
     readFile: (path: string) => ipcRenderer.invoke('read-file', path),
     writeFile: (path: string, content: string) => ipcRenderer.invoke('write-file', { filePath: path, content }),
 

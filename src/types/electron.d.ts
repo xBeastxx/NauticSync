@@ -84,6 +84,10 @@ export interface ElectronAPI {
     getAutoStart: () => Promise<boolean>;
     setAutoStart: (enabled: boolean) => Promise<boolean>;
 
+    // Tray Settings
+    getCloseToTray: () => Promise<boolean>;
+    setCloseToTray: (enabled: boolean) => Promise<boolean>;
+
     // Imports Workflow
     listImports: (projectPath: string, subPath?: string) => Promise<any[]>;
     readImport: (projectPath: string, relativePath: string) => Promise<string>;

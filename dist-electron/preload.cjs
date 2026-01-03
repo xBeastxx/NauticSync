@@ -51,6 +51,9 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   // Auto-start
   getAutoStart: () => import_electron.ipcRenderer.invoke("get-auto-start"),
   setAutoStart: (enabled) => import_electron.ipcRenderer.invoke("set-auto-start", enabled),
+  // Tray Settings
+  getCloseToTray: () => import_electron.ipcRenderer.invoke("get-close-to-tray"),
+  setCloseToTray: (enabled) => import_electron.ipcRenderer.invoke("set-close-to-tray", enabled),
   readFile: (path) => import_electron.ipcRenderer.invoke("read-file", path),
   writeFile: (path, content) => import_electron.ipcRenderer.invoke("write-file", { filePath: path, content }),
   // Imports
