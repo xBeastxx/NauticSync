@@ -29,7 +29,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@octokit/rest": "^22.0.1",
     "@tanstack/react-query": "^5.90.16",
-    "@types/diff": "^7.0.2",
+    "@types/diff": "^8.0.0",
     "@types/diff-match-patch": "^1.0.36",
     "@types/minimatch": "^5.1.2",
     "adm-zip": "^0.5.16",
