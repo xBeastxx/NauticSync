@@ -25,7 +25,7 @@
 
 ---
 
-## 🎯 What is NauticSync?
+##   What is NauticSync?
 
 NauticSync is a **desktop application** that synchronizes files between your devices using **peer-to-peer technology**. Unlike cloud storage services, your data never passes through third-party servers — files are transferred directly between your computers and devices.
 
