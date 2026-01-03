@@ -260,6 +260,163 @@ var init_mediaService = __esm({
   }
 });
 
+// electron/services/searchService.ts
+var searchService_exports = {};
+__export(searchService_exports, {
+  searchFiles: () => searchFiles
+});
+async function searchFiles(folders, query, maxResults = 50) {
+  if (!query || query.length < 2) return [];
+  const results = [];
+  const lowerQuery = query.toLowerCase();
+  for (const folderPath of folders) {
+    try {
+      await searchDirectory(folderPath, folderPath, lowerQuery, results, maxResults);
+      if (results.length >= maxResults) break;
+    } catch (err) {
+      console.error(`Failed to search ${folderPath}:`, err);
+    }
+  }
+  results.sort((a, b) => {
+    const aName = a.name.toLowerCase();
+    const bName = b.name.toLowerCase();
+    const aExact = aName === lowerQuery;
+    const bExact = bName === lowerQuery;
+    if (aExact && !bExact) return -1;
+    if (bExact && !aExact) return 1;
+    const aStarts = aName.startsWith(lowerQuery);
+    const bStarts = bName.startsWith(lowerQuery);
+    if (aStarts && !bStarts) return -1;
+    if (bStarts && !aStarts) return 1;
+    return 0;
+  });
+  return results.slice(0, maxResults);
+}
+async function searchDirectory(basePath, currentPath, query, results, maxResults) {
+  if (results.length >= maxResults) return;
+  try {
+    const entries = await fs7.promises.readdir(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (results.length >= maxResults) break;
+      if (entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === ".stversions" || entry.name.startsWith(".sync-")) {
+        continue;
+      }
+      const fullPath = path6.join(currentPath, entry.name);
+      const lowerName = entry.name.toLowerCase();
+      if (lowerName.includes(query)) {
+        try {
+          const stats = await fs7.promises.stat(fullPath);
+          results.push({
+            name: entry.name,
+            path: fullPath,
+            type: entry.isDirectory() ? "folder" : "file",
+            folder: path6.basename(basePath),
+            size: entry.isFile() ? stats.size : void 0,
+            modified: stats.mtimeMs
+          });
+        } catch {
+        }
+      }
+      if (entry.isDirectory()) {
+        const depth = fullPath.replace(basePath, "").split(path6.sep).length;
+        if (depth < 5) {
+          await searchDirectory(basePath, fullPath, query, results, maxResults);
+        }
+      }
+    }
+  } catch (err) {
+  }
+}
+var fs7, path6;
+var init_searchService = __esm({
+  "electron/services/searchService.ts"() {
+    fs7 = __toESM(require("fs"), 1);
+    path6 = __toESM(require("path"), 1);
+  }
+});
+
+// electron/services/conflictService.ts
+var conflictService_exports = {};
+__export(conflictService_exports, {
+  resolveConflict: () => resolveConflict,
+  scanConflicts: () => scanConflicts
+});
+async function scanConflicts(folders) {
+  const conflictGroups = /* @__PURE__ */ new Map();
+  for (const folder of folders) {
+    try {
+      await scanDirectoryForConflicts(folder, folder, conflictGroups);
+    } catch (error) {
+      console.error(`Failed to scan ${folder} for conflicts:`, error);
+    }
+  }
+  return Array.from(conflictGroups.values());
+}
+async function scanDirectoryForConflicts(basePath, currentPath, groups) {
+  const entries = await fs8.promises.readdir(currentPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path7.join(currentPath, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
+      const depth = fullPath.replace(basePath, "").split(path7.sep).length;
+      if (depth < 8) {
+        await scanDirectoryForConflicts(basePath, fullPath, groups);
+      }
+      continue;
+    }
+    if (entry.name.includes(".sync-conflict-")) {
+      try {
+        const match = entry.name.match(/(.+)\.sync-conflict-(\d{8}-\d{6})-([^\.]+)(\..+)?$/);
+        if (match) {
+          const [_, baseName, dateStr, deviceId, ext] = match;
+          const originalName = baseName + (ext || "");
+          const originalPath = path7.join(currentPath, originalName);
+          if (!groups.has(originalPath)) {
+            groups.set(originalPath, {
+              originalFile: originalName,
+              originalPath,
+              conflicts: []
+            });
+          }
+          const stats = await fs8.promises.stat(fullPath);
+          const group = groups.get(originalPath);
+          const year = parseInt(dateStr.substring(0, 4));
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
+          const day = parseInt(dateStr.substring(6, 8));
+          const hour = parseInt(dateStr.substring(9, 11));
+          const minute = parseInt(dateStr.substring(11, 13));
+          const second = parseInt(dateStr.substring(13, 15));
+          group.conflicts.push({
+            path: fullPath,
+            filename: entry.name,
+            modified: stats.mtimeMs,
+            size: stats.size,
+            deviceId,
+            date: new Date(year, month, day, hour, minute, second)
+          });
+        }
+      } catch (err) {
+        console.error(`Error processing conflict file ${entry.name}:`, err);
+      }
+    }
+  }
+}
+async function resolveConflict(conflictPath, originalPath, strategy) {
+  if (strategy === "keep-local") {
+    await fs8.promises.unlink(conflictPath);
+  } else if (strategy === "keep-remote") {
+    await fs8.promises.copyFile(conflictPath, originalPath);
+    await fs8.promises.unlink(conflictPath);
+  }
+}
+var fs8, path7;
+var init_conflictService = __esm({
+  "electron/services/conflictService.ts"() {
+    fs8 = __toESM(require("fs"), 1);
+    path7 = __toESM(require("path"), 1);
+  }
+});
+
 // electron/services/backupService.ts
 var backupService_exports = {};
 __export(backupService_exports, {
@@ -284,25 +441,25 @@ function parseVersionTimestamp(filename) {
   };
 }
 async function getVersionedFiles(folderPath) {
-  const versionsPath = path6.join(folderPath, ".stversions");
+  const versionsPath = path8.join(folderPath, ".stversions");
   const results = [];
   async function scan(dir, relativePath = "") {
     try {
-      const entries = await fs7.promises.readdir(dir, { withFileTypes: true });
+      const entries = await fs9.promises.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        const fullPath = path6.join(dir, entry.name);
-        const relPath = path6.join(relativePath, entry.name);
+        const fullPath = path8.join(dir, entry.name);
+        const relPath = path8.join(relativePath, entry.name);
         if (entry.isDirectory()) {
           await scan(fullPath, relPath);
         } else if (entry.isFile()) {
           const parsed = parseVersionTimestamp(entry.name);
           if (parsed) {
             try {
-              const stats = await fs7.promises.stat(fullPath);
+              const stats = await fs9.promises.stat(fullPath);
               results.push({
                 id: Buffer.from(fullPath).toString("base64"),
                 originalName: parsed.originalName,
-                originalPath: path6.join(folderPath, relativePath, parsed.originalName),
+                originalPath: path8.join(folderPath, relativePath, parsed.originalName),
                 versionPath: fullPath,
                 timestamp: parsed.timestamp,
                 size: stats.size
@@ -322,14 +479,15 @@ async function getVersionedFiles(folderPath) {
 }
 async function restoreVersion(versionPath, originalPath) {
   try {
-    const stats = await fs7.promises.stat(originalPath);
+    const stats = await fs9.promises.stat(originalPath);
     if (stats.isFile()) {
       const backupPath = originalPath + ".backup";
-      await fs7.promises.copyFile(originalPath, backupPath);
+      await fs9.promises.copyFile(originalPath, backupPath);
     }
   } catch {
   }
-  await fs7.promises.copyFile(versionPath, originalPath);
+  await fs9.promises.copyFile(versionPath, originalPath);
+  await fs9.promises.unlink(versionPath);
 }
 async function getFileHistory(folderPath, fileName) {
   const allVersions = await getVersionedFiles(folderPath);
@@ -346,25 +504,25 @@ function generateVersionTimestamp() {
   return `${year}${month}${day}-${hours}${minutes}${seconds}`;
 }
 async function moveToVersions(filePath, folderPath) {
-  const relativePath = path6.relative(folderPath, filePath);
-  const dirName = path6.dirname(relativePath);
-  const fileName = path6.basename(filePath);
-  const ext = path6.extname(fileName);
-  const baseName = path6.basename(fileName, ext);
+  const relativePath = path8.relative(folderPath, filePath);
+  const dirName = path8.dirname(relativePath);
+  const fileName = path8.basename(filePath);
+  const ext = path8.extname(fileName);
+  const baseName = path8.basename(fileName, ext);
   const timestamp = generateVersionTimestamp();
   const versionedName = `${baseName}~${timestamp}${ext}`;
-  const versionsDir = path6.join(folderPath, ".stversions", dirName);
-  await fs7.promises.mkdir(versionsDir, { recursive: true });
-  const versionPath = path6.join(versionsDir, versionedName);
-  await fs7.promises.copyFile(filePath, versionPath);
+  const versionsDir = path8.join(folderPath, ".stversions", dirName);
+  await fs9.promises.mkdir(versionsDir, { recursive: true });
+  const versionPath = path8.join(versionsDir, versionedName);
+  await fs9.promises.copyFile(filePath, versionPath);
   console.log(`Backed up ${filePath} to ${versionPath}`);
-  await fs7.promises.unlink(filePath);
+  await fs9.promises.unlink(filePath);
 }
-var fs7, path6, VERSION_PATTERN;
+var fs9, path8, VERSION_PATTERN;
 var init_backupService = __esm({
   "electron/services/backupService.ts"() {
-    fs7 = __toESM(require("fs"), 1);
-    path6 = __toESM(require("path"), 1);
+    fs9 = __toESM(require("fs"), 1);
+    path8 = __toESM(require("path"), 1);
     VERSION_PATTERN = /^(.+)~(\d{8}-\d{6})(\.[^.]+)?$/;
   }
 });
@@ -474,13 +632,13 @@ var init_imports = __esm({
         }
         try {
           const axios2 = await import("axios");
-          const fs9 = await import("fs");
+          const fs11 = await import("fs");
           const response = await axios2.default({
             url,
             method: "GET",
             responseType: "stream"
           });
-          const writer = fs9.createWriteStream(targetPath);
+          const writer = fs11.createWriteStream(targetPath);
           response.data.pipe(writer);
           return new Promise((resolve, reject) => {
             writer.on("finish", () => resolve(targetPath));
@@ -678,6 +836,7 @@ var FileSystemService = class {
 // electron/main.ts
 var mainWindow = null;
 var syncRunner = null;
+var tray = null;
 var createWindow = () => {
   mainWindow = new import_electron3.BrowserWindow({
     width: 1200,
@@ -719,8 +878,50 @@ var createWindow = () => {
     });
   });
 };
+var createTray = () => {
+  const isDev = process.env.NODE_ENV === "development" || !import_electron3.app.isPackaged;
+  const iconPath = isDev ? import_path5.default.join(__dirname, "../public/icon.ico") : import_path5.default.join(process.resourcesPath, "icon.ico");
+  let trayIcon;
+  try {
+    trayIcon = import_electron3.nativeImage.createFromPath(iconPath);
+    if (trayIcon.isEmpty()) {
+      trayIcon = import_electron3.nativeImage.createEmpty();
+    }
+  } catch {
+    trayIcon = import_electron3.nativeImage.createEmpty();
+  }
+  tray = new import_electron3.Tray(trayIcon.resize({ width: 16, height: 16 }));
+  tray.setToolTip("NauticSync");
+  const contextMenu = import_electron3.Menu.buildFromTemplate([
+    {
+      label: "Show NauticSync",
+      click: () => {
+        mainWindow == null ? void 0 : mainWindow.show();
+        mainWindow == null ? void 0 : mainWindow.focus();
+      }
+    },
+    { type: "separator" },
+    {
+      label: "Sync Status: Running",
+      enabled: false
+    },
+    { type: "separator" },
+    {
+      label: "Quit",
+      click: () => {
+        import_electron3.app.quit();
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
+  tray.on("double-click", () => {
+    mainWindow == null ? void 0 : mainWindow.show();
+    mainWindow == null ? void 0 : mainWindow.focus();
+  });
+};
 import_electron3.app.on("ready", async () => {
   createWindow();
+  createTray();
   const fsService = new FileSystemService();
   import_electron3.ipcMain.handle("get-syncthing-config", () => {
     if (!syncRunner) return { apiKey: null, url: null };
@@ -728,6 +929,17 @@ import_electron3.app.on("ready", async () => {
       apiKey: syncRunner.getApiKey(),
       url: syncRunner.getUrl()
     };
+  });
+  import_electron3.ipcMain.handle("get-auto-start", () => {
+    const settings = import_electron3.app.getLoginItemSettings();
+    return settings.openAtLogin;
+  });
+  import_electron3.ipcMain.handle("set-auto-start", (event, enabled) => {
+    import_electron3.app.setLoginItemSettings({
+      openAtLogin: enabled,
+      openAsHidden: false
+    });
+    return enabled;
   });
   import_electron3.ipcMain.handle("read-directory", async (event, dirPath) => {
     return await fsService.readDirectory(dirPath);
@@ -754,6 +966,18 @@ import_electron3.app.on("ready", async () => {
     const duplicates = await findDuplicates2(files);
     return Array.from(duplicates.values());
   });
+  import_electron3.ipcMain.handle("search-files", async (event, { folders, query }) => {
+    const { searchFiles: searchFiles2 } = await Promise.resolve().then(() => (init_searchService(), searchService_exports));
+    return await searchFiles2(folders, query, 50);
+  });
+  import_electron3.ipcMain.handle("scan-conflicts", async (event, folders) => {
+    const { scanConflicts: scanConflicts2 } = await Promise.resolve().then(() => (init_conflictService(), conflictService_exports));
+    return await scanConflicts2(folders);
+  });
+  import_electron3.ipcMain.handle("resolve-conflict", async (event, { conflictPath, originalPath, strategy }) => {
+    const { resolveConflict: resolveConflict2 } = await Promise.resolve().then(() => (init_conflictService(), conflictService_exports));
+    return await resolveConflict2(conflictPath, originalPath, strategy);
+  });
   import_electron3.ipcMain.handle("get-file-versions", async (event, folderPath) => {
     const { getVersionedFiles: getVersionedFiles2 } = await Promise.resolve().then(() => (init_backupService(), backupService_exports));
     return await getVersionedFiles2(folderPath);
@@ -762,9 +986,18 @@ import_electron3.app.on("ready", async () => {
     const { restoreVersion: restoreVersion2 } = await Promise.resolve().then(() => (init_backupService(), backupService_exports));
     return await restoreVersion2(versionPath, originalPath);
   });
+  import_electron3.ipcMain.handle("delete-file-version", async (event, versionPath) => {
+    const fs11 = await import("fs");
+    try {
+      await fs11.promises.unlink(versionPath);
+    } catch (e) {
+      console.error("Failed to delete version:", e);
+      throw e;
+    }
+  });
   import_electron3.ipcMain.handle("delete-file", async (event, filePath) => {
-    const fs9 = await import("fs");
-    await fs9.promises.unlink(filePath);
+    const fs11 = await import("fs");
+    await fs11.promises.unlink(filePath);
   });
   import_electron3.ipcMain.handle("delete-file-with-backup", async (event, { filePath, folderPath }) => {
     const { moveToVersions: moveToVersions2 } = await Promise.resolve().then(() => (init_backupService(), backupService_exports));
@@ -772,13 +1005,13 @@ import_electron3.app.on("ready", async () => {
   });
   import_electron3.ipcMain.handle("read-file", async (_, filePath) => {
     try {
-      const fs9 = await import("fs");
-      await fs9.promises.access(filePath);
-      const stats = await fs9.promises.stat(filePath);
+      const fs11 = await import("fs");
+      await fs11.promises.access(filePath);
+      const stats = await fs11.promises.stat(filePath);
       if (stats.size > 10 * 1024 * 1024) {
         throw new Error("File too large to preview");
       }
-      const content = await fs9.promises.readFile(filePath, "utf-8");
+      const content = await fs11.promises.readFile(filePath, "utf-8");
       return content;
     } catch (error) {
       console.error("Failed to read file:", error);
@@ -787,8 +1020,8 @@ import_electron3.app.on("ready", async () => {
   });
   import_electron3.ipcMain.handle("write-file", async (_, { filePath, content }) => {
     try {
-      const fs9 = await import("fs");
-      await fs9.promises.writeFile(filePath, content, "utf-8");
+      const fs11 = await import("fs");
+      await fs11.promises.writeFile(filePath, content, "utf-8");
     } catch (error) {
       console.error("Failed to write file:", error);
       throw error;
@@ -804,6 +1037,15 @@ import_electron3.app.on("ready", async () => {
   });
   import_electron3.ipcMain.handle("open-path", async (event, pathStr) => {
     const { shell } = require("electron");
+    const fs11 = await import("fs");
+    try {
+      const stats = await fs11.promises.stat(pathStr);
+      if (stats.isFile()) {
+        shell.showItemInFolder(pathStr);
+        return;
+      }
+    } catch {
+    }
     return await shell.openPath(pathStr);
   });
   import_electron3.ipcMain.handle("close-window", () => {

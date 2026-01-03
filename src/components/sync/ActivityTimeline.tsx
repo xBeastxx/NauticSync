@@ -46,7 +46,12 @@ export const ActivityTimeline = () => {
     const pollInterval = useRef<NodeJS.Timeout | null>(null);
     const initialLoadDone = useRef(false);
 
+    const isFetching = useRef(false);
+
     const fetchEvents = useCallback(async () => {
+        if (isFetching.current) return;
+        isFetching.current = true;
+
         try {
             // Add timeout to prevent hanging
             const timeoutPromise = new Promise((_, reject) =>
@@ -62,7 +67,13 @@ export const ActivityTimeline = () => {
 
                 // Prepend new events (newest first)
                 setEvents(prev => {
-                    const combined = [...newEvents.reverse(), ...prev];
+                    // Filter duplicates based on ID
+                    const existingIds = new Set(prev.map(e => e.id));
+                    const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
+
+                    if (uniqueNewEvents.length === 0) return prev;
+
+                    const combined = [...uniqueNewEvents.reverse(), ...prev];
                     // Keep only last 500 events
                     return combined.slice(0, 500);
                 });
@@ -76,6 +87,7 @@ export const ActivityTimeline = () => {
         } finally {
             setIsLoading(false);
             initialLoadDone.current = true;
+            isFetching.current = false;
         }
     }, []);
 

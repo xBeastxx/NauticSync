@@ -25,6 +25,9 @@ export const Dashboard = () => {
 
     return (
         <div className="space-y-6">
+            {/* Connected Nodes Header */}
+            <DeviceList className="mb-6" />
+
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatsCard
@@ -63,7 +66,6 @@ export const Dashboard = () => {
                         <FolderList />
                         <ActiveTransfers />
                     </Card>
-                    <DeviceList />
                 </div>
 
                 {/* Right Column: Activity Timeline */}

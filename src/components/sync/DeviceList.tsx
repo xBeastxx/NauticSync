@@ -8,7 +8,13 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const STORAGE_KEY = 'syncmaster-devices-collapsed';
 
-export const DeviceList = () => {
+interface DeviceListProps {
+    className?: string;
+    sidebarMode?: boolean;
+    isSidebarCollapsed?: boolean;
+}
+
+export const DeviceList = ({ className, sidebarMode, isSidebarCollapsed }: DeviceListProps) => {
     const { data: connections } = useConnections();
     const { data: config } = useConfig();
     const { data: status } = useSystemStatus();
@@ -60,6 +66,56 @@ export const DeviceList = () => {
             console.error("Failed to remove device", err);
         }
     };
+
+    if (sidebarMode) {
+        if (isSidebarCollapsed) return null;
+
+        return (
+            <div className={clsx("px-3 mb-4 space-y-2", className)}>
+                <div className="flex items-center justify-between text-xs text-zinc-500 px-2 font-medium uppercase tracking-wider">
+                    <span>Active Nodes</span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsModalOpen(true);
+                        }}
+                        className="hover:text-white transition-colors p-1 -mr-1"
+                        title="Pair Device"
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                    </button>
+                    {isModalOpen && <AddDeviceModal onClose={() => setIsModalOpen(false)} />}
+                </div>
+
+                <div className="space-y-1">
+                    {remoteDevices.length === 0 ? (
+                        <div className="text-xs text-zinc-600 px-2 py-1">No devices</div>
+                    ) : (
+                        remoteDevices.map((dev: any) => (
+                            <div key={dev.deviceID} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors group">
+                                <div className={clsx("w-2 h-2 rounded-full shrink-0",
+                                    dev.connected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-zinc-700"
+                                )} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <span className={clsx("text-sm truncate", dev.connected ? "text-white" : "text-zinc-500")}>
+                                            {dev.name || 'Device'}
+                                        </span>
+                                        <button
+                                            onClick={() => handleRemove(dev.deviceID)}
+                                            className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition-opacity p-0.5"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl">

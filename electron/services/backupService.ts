@@ -106,6 +106,9 @@ export async function restoreVersion(versionPath: string, originalPath: string):
 
     // Copy version to original path
     await fs.promises.copyFile(versionPath, originalPath);
+
+    // Delete the version file since it is now restored (effectively "moving" it back)
+    await fs.promises.unlink(versionPath);
 }
 
 /**

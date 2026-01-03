@@ -23,5 +23,6 @@ export const useConfig = () => {
         queryFn: () => syncthing.getConfig(),
         // Config doesn't change often, rely on events or manual invalidation usually, but polling is safe for now
         refetchInterval: 10000,
+        staleTime: 30000, // Consider data fresh for 30s to prevent loading screens on nav
     });
 };

@@ -26,8 +26,20 @@ export interface ElectronAPI {
     downloadFile: (url: string, targetPath: string) => Promise<void>;
 
     // Conflicts
-    scanConflicts: (folderPath: string) => Promise<any[]>;
-    resolveConflict: (conflictPath: string, strategy: 'keep-mine' | 'keep-theirs') => Promise<void>;
+    // Conflicts
+    scanConflicts: (folders: string[]) => Promise<{
+        originalFile: string;
+        originalPath: string;
+        conflicts: {
+            path: string;
+            filename: string;
+            modified: number;
+            size: number;
+            deviceId: string;
+            date: Date;
+        }[];
+    }[]>;
+    resolveConflict: (conflictPath: string, originalPath: string, strategy: 'keep-local' | 'keep-remote') => Promise<void>;
 
     // Profile Detection
     detectProfile: (folderPath: string) => Promise<string>;
@@ -40,9 +52,20 @@ export interface ElectronAPI {
     scanMedia: (folderPath: string, ignorePatterns?: string[]) => Promise<any[]>;
     findDuplicates: (folderPath: string) => Promise<any[][]>;
 
+    // Global Search
+    searchFiles: (folders: string[], query: string) => Promise<{
+        name: string;
+        path: string;
+        type: 'file' | 'folder';
+        folder: string;
+        size?: number;
+        modified?: number;
+    }[]>;
+
     // Backup Service
     getFileVersions: (folderPath: string) => Promise<any[]>;
     restoreFileVersion: (versionPath: string, originalPath: string) => Promise<void>;
+    deleteFileVersion: (versionPath: string) => Promise<void>;
 
     // File Operations
     deleteFile: (filePath: string) => Promise<void>;
@@ -56,6 +79,10 @@ export interface ElectronAPI {
     openPath: (path: string) => Promise<string>;
     readFile: (path: string) => Promise<string>;
     writeFile: (path: string, content: string) => Promise<void>;
+
+    // Auto-start
+    getAutoStart: () => Promise<boolean>;
+    setAutoStart: (enabled: boolean) => Promise<boolean>;
 
     // Imports Workflow
     listImports: (projectPath: string, subPath?: string) => Promise<any[]>;

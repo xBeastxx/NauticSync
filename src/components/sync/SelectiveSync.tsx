@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Switch } from '../ui/Switch';
 import { Card } from '../ui/Card';
 import { syncthing } from '../../lib/syncthing';
 import {
@@ -83,27 +84,48 @@ export const SelectiveSync = () => {
         return folder.devices.some(d => d.deviceID === deviceId);
     };
 
-    const toggleFolderDevice = (folderId: string, deviceId: string) => {
+    const toggleFolderDevice = async (folderId: string, deviceId: string) => {
+        // Optimistic update
         setFolders(prev => prev.map(folder => {
             if (folder.id !== folderId) return folder;
-
             const isCurrentlyShared = isFolderSharedWithDevice(folder, deviceId);
-
             if (isCurrentlyShared) {
-                // Remove device from folder
-                return {
-                    ...folder,
-                    devices: folder.devices.filter(d => d.deviceID !== deviceId)
-                };
+                return { ...folder, devices: folder.devices.filter(d => d.deviceID !== deviceId) };
             } else {
-                // Add device to folder
-                return {
-                    ...folder,
-                    devices: [...folder.devices, { deviceID: deviceId }]
-                };
+                return { ...folder, devices: [...folder.devices, { deviceID: deviceId }] };
             }
         }));
-        setHasChanges(true);
+
+        // Trigger save immediately (Debounce could be added if rapid toggling is expected, but direct save is safer for config consistency)
+        setIsSaving(true);
+        try {
+            const config = await syncthing.getConfig();
+            const updatedConfig = {
+                ...config,
+                folders: config.folders.map((f: Folder) => {
+                    if (f.id === folderId) {
+                        // Calculate new State based on current logic but we need to rely on the *optimistic* state we just computed? 
+                        // Better to re-compute the change logic here to be stateless or use the state updater callback result.
+                        // Actually, let's just re-read the folder state from the closure if we can, or duplicate the logic properly.
+                        const isShared = f.devices.some(d => d.deviceID === deviceId);
+                        const newDevices = isShared
+                            ? f.devices.filter(d => d.deviceID !== deviceId)
+                            : [...f.devices, { deviceID: deviceId }];
+
+                        return { ...f, devices: newDevices };
+                    }
+                    return f;
+                })
+            };
+            await syncthing.setConfig(updatedConfig);
+            // No need to setHasChanges(true) anymore
+        } catch (err) {
+            console.error('Failed to auto-save:', err);
+            // Revert state on error? For now just alert
+            alert('Failed to update: ' + err);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const deleteFolder = async (folderId: string, folderLabel: string) => {
@@ -261,22 +283,11 @@ export const SelectiveSync = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => toggleFolderDevice(folder.id, device.deviceID)}
-                                                        className={clsx(
-                                                            "w-10 h-6 rounded-full transition-all relative",
-                                                            isShared
-                                                                ? "bg-green-500/30 border border-green-500/50"
-                                                                : "bg-zinc-700 border border-zinc-600"
-                                                        )}
-                                                    >
-                                                        <div className={clsx(
-                                                            "absolute top-0.5 w-5 h-5 rounded-full transition-all",
-                                                            isShared
-                                                                ? "right-0.5 bg-green-400"
-                                                                : "left-0.5 bg-zinc-500"
-                                                        )} />
-                                                    </button>
+                                                    <Switch
+                                                        checked={isShared}
+                                                        onChange={() => toggleFolderDevice(folder.id, device.deviceID)}
+                                                        size="sm"
+                                                    />
                                                     <button
                                                         onClick={() => deleteFolder(folder.id, folder.label || folder.id)}
                                                         className="p-1 rounded opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -294,15 +305,6 @@ export const SelectiveSync = () => {
                     })}
                 </div>
 
-                {/* Save Button */}
-                <button
-                    onClick={saveChanges}
-                    disabled={isSaving || !hasChanges}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                    <Save className="w-4 h-4" />
-                    {isSaving ? 'Saving...' : hasChanges ? 'Save Changes' : 'All Saved'}
-                </button>
             </div>
         </Card>
     );

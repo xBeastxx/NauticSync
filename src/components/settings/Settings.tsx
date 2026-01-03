@@ -1,15 +1,33 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { syncthing } from '../../lib/syncthing';
 import { Card } from '../ui/Card';
-import { Shield, Globe, Lock } from 'lucide-react';
+import { Shield, Globe, Lock, Power } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useConfig } from '../../lib/api/hooks';
 import { BandwidthScheduler } from '../sync/BandwidthScheduler';
 import { SelectiveSync } from '../sync/SelectiveSync';
+import { useState, useEffect } from 'react';
+import { Switch } from '../ui/Switch';
 
 export const Settings = () => {
     const { data: config, isLoading } = useConfig();
     const queryClient = useQueryClient();
+    const [autoStartEnabled, setAutoStartEnabled] = useState(false);
+
+    // Load auto-start state on mount
+    useEffect(() => {
+        window.electronAPI.getAutoStart().then(setAutoStartEnabled).catch(() => { });
+    }, []);
+
+    const toggleAutoStart = async () => {
+        const newValue = !autoStartEnabled;
+        try {
+            await window.electronAPI.setAutoStart(newValue);
+            setAutoStartEnabled(newValue);
+        } catch (e) {
+            console.error('Failed to set auto-start:', e);
+        }
+    };
 
     const isLanOnly = config
         ? (!config.options.globalAnnounceEnabled && !config.options.relaysEnabled)
@@ -33,7 +51,24 @@ export const Settings = () => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-white mb-6">Settings</h2>
+
+
+            {/* Auto-start */}
+            <Card className="border-l-4 border-l-emerald-500">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Power className="w-5 h-5 text-emerald-500" />
+                        <div>
+                            <h3 className="font-medium text-white">Start with Windows</h3>
+                            <p className="text-xs text-zinc-500">Launch SyncMaster automatically when you log in</p>
+                        </div>
+                    </div>
+                    <Switch
+                        checked={autoStartEnabled}
+                        onChange={toggleAutoStart}
+                    />
+                </div>
+            </Card>
 
             {/* Privacy Mode */}
             <Card className="border-l-4 border-l-yellow-500">

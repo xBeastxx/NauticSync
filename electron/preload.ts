@@ -25,8 +25,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     downloadFile: (url: string, targetPath: string) => ipcRenderer.invoke('download-file', { url, targetPath }),
 
     // Conflicts
-    scanConflicts: (folderPath: string) => ipcRenderer.invoke('scan-conflicts', folderPath),
-    resolveConflict: (conflictPath: string, strategy: 'keep-mine' | 'keep-theirs') => ipcRenderer.invoke('resolve-conflict', { conflictPath, strategy }),
+    scanConflicts: (folders: string[]) => ipcRenderer.invoke('scan-conflicts', folders),
+    resolveConflict: (conflictPath: string, originalPath: string, strategy: 'keep-local' | 'keep-remote') => ipcRenderer.invoke('resolve-conflict', { conflictPath, originalPath, strategy }),
 
     // Profile Detection
     detectProfile: (folderPath: string) => ipcRenderer.invoke('detect-profile', folderPath),
@@ -39,9 +39,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     scanMedia: (folderPath: string, ignorePatterns: string[]) => ipcRenderer.invoke('scan-media', { folderPath, ignorePatterns }),
     findDuplicates: (folderPath: string) => ipcRenderer.invoke('find-duplicates', folderPath),
 
+    // Global Search
+    searchFiles: (folders: string[], query: string) => ipcRenderer.invoke('search-files', { folders, query }),
+
     // Backup Service
     getFileVersions: (folderPath: string) => ipcRenderer.invoke('get-file-versions', folderPath),
     restoreFileVersion: (versionPath: string, originalPath: string) => ipcRenderer.invoke('restore-file-version', { versionPath, originalPath }),
+    deleteFileVersion: (versionPath: string) => ipcRenderer.invoke('delete-file-version', versionPath),
 
     // File Operations
     deleteFile: (filePath: string) => ipcRenderer.invoke('delete-file', filePath),
@@ -53,6 +57,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     toggleMaximizeWindow: () => ipcRenderer.invoke('toggle-maximize-window'),
     showSaveDialog: (defaultName: string) => ipcRenderer.invoke('show-save-dialog', defaultName),
     openPath: (path: string) => ipcRenderer.invoke('open-path', path),
+
+    // Auto-start
+    getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
+    setAutoStart: (enabled: boolean) => ipcRenderer.invoke('set-auto-start', enabled),
+
     readFile: (path: string) => ipcRenderer.invoke('read-file', path),
     writeFile: (path: string, content: string) => ipcRenderer.invoke('write-file', { filePath: path, content }),
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage } from 'electron';
 import path from 'path';
 import { SyncthingInstaller } from './services/installer';
 import { SyncthingRunner } from './services/runner';
@@ -9,6 +9,7 @@ import { FileSystemService } from './services/filesystem';
 
 let mainWindow: BrowserWindow | null = null;
 let syncRunner: SyncthingRunner | null = null;
+let tray: Tray | null = null;
 
 const createWindow = () => {
     // Create the browser window.
@@ -58,9 +59,61 @@ const createWindow = () => {
     });
 };
 
+const createTray = () => {
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+    const iconPath = isDev
+        ? path.join(__dirname, '../public/icon.ico')
+        : path.join(process.resourcesPath, 'icon.ico');
+
+    // Fallback to default icon if custom icon not found
+    let trayIcon;
+    try {
+        trayIcon = nativeImage.createFromPath(iconPath);
+        if (trayIcon.isEmpty()) {
+            trayIcon = nativeImage.createEmpty();
+        }
+    } catch {
+        trayIcon = nativeImage.createEmpty();
+    }
+
+    tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
+    tray.setToolTip('NauticSync');
+
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Show NauticSync',
+            click: () => {
+                mainWindow?.show();
+                mainWindow?.focus();
+            }
+        },
+        { type: 'separator' },
+        {
+            label: 'Sync Status: Running',
+            enabled: false
+        },
+        { type: 'separator' },
+        {
+            label: 'Quit',
+            click: () => {
+                app.quit();
+            }
+        }
+    ]);
+
+    tray.setContextMenu(contextMenu);
+
+    // Double click shows window
+    tray.on('double-click', () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+    });
+};
+
 
 app.on('ready', async () => {
     createWindow();
+    createTray();
     const fsService = new FileSystemService();
 
     // IPC Handlers
@@ -70,6 +123,20 @@ app.on('ready', async () => {
             apiKey: syncRunner.getApiKey(),
             url: syncRunner.getUrl()
         };
+    });
+
+    // Auto-start handlers
+    ipcMain.handle('get-auto-start', () => {
+        const settings = app.getLoginItemSettings();
+        return settings.openAtLogin;
+    });
+
+    ipcMain.handle('set-auto-start', (event, enabled: boolean) => {
+        app.setLoginItemSettings({
+            openAtLogin: enabled,
+            openAsHidden: false
+        });
+        return enabled;
     });
 
     // FS handlers
@@ -109,6 +176,23 @@ app.on('ready', async () => {
         return Array.from(duplicates.values());
     });
 
+    // Global Search
+    ipcMain.handle('search-files', async (event, { folders, query }: { folders: string[]; query: string }) => {
+        const { searchFiles } = await import('./services/searchService');
+        return await searchFiles(folders, query, 50);
+    });
+
+    // Conflict Service
+    ipcMain.handle('scan-conflicts', async (event, folders: string[]) => {
+        const { scanConflicts } = await import('./services/conflictService');
+        return await scanConflicts(folders);
+    });
+
+    ipcMain.handle('resolve-conflict', async (event, { conflictPath, originalPath, strategy }: { conflictPath: string; originalPath: string; strategy: 'keep-local' | 'keep-remote' }) => {
+        const { resolveConflict } = await import('./services/conflictService');
+        return await resolveConflict(conflictPath, originalPath, strategy);
+    });
+
     // Backup Service
     ipcMain.handle('get-file-versions', async (event, folderPath: string) => {
         const { getVersionedFiles } = await import('./services/backupService');
@@ -118,6 +202,16 @@ app.on('ready', async () => {
     ipcMain.handle('restore-file-version', async (event, { versionPath, originalPath }: { versionPath: string; originalPath: string }) => {
         const { restoreVersion } = await import('./services/backupService');
         return await restoreVersion(versionPath, originalPath);
+    });
+
+    ipcMain.handle('delete-file-version', async (event, versionPath: string) => {
+        const fs = await import('fs');
+        try {
+            await fs.promises.unlink(versionPath);
+        } catch (e) {
+            console.error('Failed to delete version:', e);
+            throw e;
+        }
     });
 
     // File Operations
@@ -174,6 +268,16 @@ app.on('ready', async () => {
 
     ipcMain.handle('open-path', async (event, pathStr) => {
         const { shell } = require('electron');
+        const fs = await import('fs');
+        try {
+            const stats = await fs.promises.stat(pathStr);
+            if (stats.isFile()) {
+                shell.showItemInFolder(pathStr);
+                return;
+            }
+        } catch {
+            // Ignore error, fallback to openPath
+        }
         return await shell.openPath(pathStr);
     });
 

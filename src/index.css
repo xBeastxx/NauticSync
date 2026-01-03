@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
-/* Tell Tailwind v4 where to scan for class names */
-@source "../src/**/*.{js,ts,jsx,tsx}";
-@source "../index.html";
+@theme {
+  --color-primary: #FFD700;
+  --color-bg-dark: #0a0a0a;
+  --color-bg-card: #141414;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
 
+/* For compatibility with legacy classes if needed, but v4 uses variables differently. 
+   We'll keep the root variables for the app's internal usage. */
 :root {
   --color-primary: #FFD700;
-  /* Gold/Yellow accent for premium feel */
   --color-bg-dark: #0a0a0a;
   --color-bg-card: #141414;
   --font-sans: "Inter", system-ui, sans-serif;

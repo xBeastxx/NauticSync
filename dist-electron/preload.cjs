@@ -23,8 +23,8 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   getRepoContents: (owner, repo, path) => import_electron.ipcRenderer.invoke("get-repo-contents", { owner, repo, path }),
   downloadFile: (url, targetPath) => import_electron.ipcRenderer.invoke("download-file", { url, targetPath }),
   // Conflicts
-  scanConflicts: (folderPath) => import_electron.ipcRenderer.invoke("scan-conflicts", folderPath),
-  resolveConflict: (conflictPath, strategy) => import_electron.ipcRenderer.invoke("resolve-conflict", { conflictPath, strategy }),
+  scanConflicts: (folders) => import_electron.ipcRenderer.invoke("scan-conflicts", folders),
+  resolveConflict: (conflictPath, originalPath, strategy) => import_electron.ipcRenderer.invoke("resolve-conflict", { conflictPath, originalPath, strategy }),
   // Profile Detection
   detectProfile: (folderPath) => import_electron.ipcRenderer.invoke("detect-profile", folderPath),
   // Ignore Parser
@@ -33,9 +33,12 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   // Media Service
   scanMedia: (folderPath, ignorePatterns) => import_electron.ipcRenderer.invoke("scan-media", { folderPath, ignorePatterns }),
   findDuplicates: (folderPath) => import_electron.ipcRenderer.invoke("find-duplicates", folderPath),
+  // Global Search
+  searchFiles: (folders, query) => import_electron.ipcRenderer.invoke("search-files", { folders, query }),
   // Backup Service
   getFileVersions: (folderPath) => import_electron.ipcRenderer.invoke("get-file-versions", folderPath),
   restoreFileVersion: (versionPath, originalPath) => import_electron.ipcRenderer.invoke("restore-file-version", { versionPath, originalPath }),
+  deleteFileVersion: (versionPath) => import_electron.ipcRenderer.invoke("delete-file-version", versionPath),
   // File Operations
   deleteFile: (filePath) => import_electron.ipcRenderer.invoke("delete-file", filePath),
   deleteFileWithBackup: (filePath, folderPath) => import_electron.ipcRenderer.invoke("delete-file-with-backup", { filePath, folderPath }),
@@ -45,6 +48,9 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   toggleMaximizeWindow: () => import_electron.ipcRenderer.invoke("toggle-maximize-window"),
   showSaveDialog: (defaultName) => import_electron.ipcRenderer.invoke("show-save-dialog", defaultName),
   openPath: (path) => import_electron.ipcRenderer.invoke("open-path", path),
+  // Auto-start
+  getAutoStart: () => import_electron.ipcRenderer.invoke("get-auto-start"),
+  setAutoStart: (enabled) => import_electron.ipcRenderer.invoke("set-auto-start", enabled),
   readFile: (path) => import_electron.ipcRenderer.invoke("read-file", path),
   writeFile: (path, content) => import_electron.ipcRenderer.invoke("write-file", { filePath: path, content }),
   // Imports

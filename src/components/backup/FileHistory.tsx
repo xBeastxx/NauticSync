@@ -1,4 +1,4 @@
-import { Clock, RotateCcw, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Clock, RotateCcw, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import type { VersionedFile } from './SmartBackup';
 import { useState } from 'react';
 import { clsx } from 'clsx';
@@ -8,9 +8,10 @@ import { formatDistanceToNow } from 'date-fns';
 interface FileHistoryProps {
     groupedVersions: Record<string, VersionedFile[]>;
     onRestore: (version: VersionedFile) => void;
+    onDelete?: (version: VersionedFile) => void;
 }
 
-export const FileHistory = ({ groupedVersions, onRestore }: FileHistoryProps) => {
+export const FileHistory = ({ groupedVersions, onRestore, onDelete }: FileHistoryProps) => {
     const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
     const toggleFile = (path: string) => {
@@ -118,6 +119,15 @@ export const FileHistory = ({ groupedVersions, onRestore }: FileHistoryProps) =>
                                             <RotateCcw className="w-3.5 h-3.5" />
                                             Restore
                                         </button>
+                                        {onDelete && (
+                                            <button
+                                                onClick={() => onDelete(version)}
+                                                className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                title="Delete this version"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>

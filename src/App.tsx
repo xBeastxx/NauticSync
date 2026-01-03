@@ -4,6 +4,7 @@ import { Dashboard } from './components/sync/Dashboard';
 import { Settings } from './components/settings/Settings';
 import { MediaHub } from './components/media/MediaHub';
 import { SmartBackup } from './components/backup/SmartBackup';
+import { ConflictsViewer } from './components/sync/ConflictsViewer';
 
 function App() {
   const { activeModule } = useNavigationStore();
@@ -18,6 +19,8 @@ function App() {
         return <SmartBackup />;
       case 'settings':
         return <Settings />;
+      case 'conflicts':
+        return <ConflictsViewer />;
       default:
         return <Dashboard />;
     }

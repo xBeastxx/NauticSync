@@ -77,6 +77,20 @@ export const SmartBackup = () => {
         }
     };
 
+    const handleDeleteVersion = async (version: VersionedFile) => {
+        if (confirm(`Are you sure you want to delete this backup version of "${version.originalName}"?`)) {
+            try {
+                await window.electronAPI.deleteFileVersion(version.versionPath);
+
+                // Remove from versions list
+                setVersions(prev => prev.filter(v => v.id !== version.id));
+            } catch (err) {
+                console.error('Failed to delete version:', err);
+                alert('Failed to delete version');
+            }
+        }
+    };
+
     // Group versions by original file name
     const groupedVersions = versions.reduce((acc, version) => {
         const key = version.originalPath;
@@ -93,11 +107,8 @@ export const SmartBackup = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Smart Backup</h2>
-                    <p className="text-zinc-400">View file history and restore previous versions.</p>
-                </div>
+            {/* Header - Title handled by AppLayout */}
+            <div className="flex items-center justify-end">
                 <button
                     onClick={handleScan}
                     disabled={isScanning || !selectedFolder}
@@ -199,7 +210,11 @@ export const SmartBackup = () => {
                             <p>{isScanning ? 'Looking for versioned files...' : 'No .stversions folder found. Enable versioning in Syncthing settings.'}</p>
                         </Card>
                     ) : (
-                        <FileHistory groupedVersions={groupedVersions} onRestore={handleRestore} />
+                        <FileHistory
+                            groupedVersions={groupedVersions}
+                            onRestore={handleRestore}
+                            onDelete={handleDeleteVersion}
+                        />
                     )}
                 </>
             ) : activeTab === 'config' ? (
