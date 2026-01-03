@@ -33,36 +33,36 @@ NauticSync is a **desktop application** that synchronizes files between your dev
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-### 🔄 Real-time Synchronization
+###  Real-time Synchronization
 Powered by [Syncthing](https://syncthing.net/), files sync automatically as soon as changes are detected. No manual uploads or downloads needed.
 
-### 🖼️ Media Hub
+###  Media Hub
 Browse, preview, and manage your synced media files with beautiful thumbnail previews. Supports images, videos, and common media formats.
 
-### 📂 Selective Sync
+###  Selective Sync
 Choose exactly which folders sync to each device. Keep work files on your work computer and personal files elsewhere.
 
-### 🕐 Version History & Backup
+###  Version History & Backup
 Accidentally deleted or modified a file? Restore previous versions with a single click. NauticSync keeps a history of your file changes.
 
-### ⚔️ Conflict Resolution
+###  Conflict Resolution
 When the same file is edited on multiple devices, NauticSync detects the conflict and provides a visual diff viewer to help you merge or choose the correct version.
 
-### 🔒 Privacy Mode
+###  Privacy Mode
 Enable **Strict LAN Only** mode to disable all global discovery and relay servers. Your devices will only find each other on the same local network — maximum privacy.
 
-### ⏰ Bandwidth Scheduler
+###  Bandwidth Scheduler
 Control when and how fast your files sync. Set up schedules to avoid using bandwidth during work hours or limit speeds during peak times.
 
-### 🔍 Global Search
+###  Global Search
 Instantly find any file across all your synchronized folders with the global search (Ctrl + K). Type a filename and jump directly to it.
 
-### 💻 System Tray Integration
+###  System Tray Integration
 Minimize to tray to keep NauticSync running quietly in the background. Your files continue syncing while you work.
 
-### 🚀 Auto-Start with Windows
+###  Auto-Start with Windows
 Enable auto-start to launch NauticSync when you log in. Never worry about forgetting to start the app.
 
 ---
@@ -90,12 +90,12 @@ Enable auto-start to launch NauticSync when you log in. Never worry about forget
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Download the Installer
 
 1. Go to the [Releases Page](https://github.com/xBeastxx/NauticSync/releases/latest)
-2. Download `NauticSync Setup 1.0.0.exe`
+2. Download `NauticSync Setup 1.1.0.exe`
 3. Run the installer and follow the prompts
 4. Launch NauticSync and name your device
 5. Start adding folders to sync!
@@ -154,7 +154,7 @@ NauticSync/
 
 ---
 
-## 🔒 Security & Privacy
+##  Security & Privacy
 
 NauticSync uses Syncthing's proven security model:
 
@@ -165,7 +165,7 @@ NauticSync uses Syncthing's proven security model:
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
@@ -177,13 +177,13 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - [Syncthing](https://syncthing.net/) - The incredible synchronization engine that powers NauticSync
 - [Electron](https://www.electronjs.org/) - Making cross-platform desktop apps possible
