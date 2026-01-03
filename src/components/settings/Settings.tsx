@@ -9,7 +9,6 @@ import { SelectiveSync } from '../sync/SelectiveSync';
 import { useState, useEffect } from 'react';
 import { Switch } from '../ui/Switch';
 import { TermsModal, EulaModal, CreditsModal, PrivacyModal } from './LegalModals';
-import { Scale, FileText, Users } from 'lucide-react';
 
 export const Settings = () => {
     const { data: config, isLoading } = useConfig();
@@ -108,6 +107,9 @@ export const Settings = () => {
                 </div>
             </Card>
 
+            {/* Selective Sync */}
+            <SelectiveSync />
+
             {/* Privacy Mode */}
             <Card className="border-l-4 border-l-yellow-500">
                 <div className="flex items-start justify-between">
@@ -160,8 +162,6 @@ export const Settings = () => {
             {/* Bandwidth Scheduler */}
             <BandwidthScheduler />
 
-            {/* Selective Sync */}
-            <SelectiveSync />
 
             {/* Legal Footer */}
             <div className="pt-8 mt-8 border-t border-zinc-800/50 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-500">
@@ -181,6 +181,6 @@ export const Settings = () => {
             <PrivacyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
             <EulaModal isOpen={showEula} onClose={() => setShowEula(false)} />
             <CreditsModal isOpen={showCredits} onClose={() => setShowCredits(false)} />
-        </div>
+        </div >
     );
 };

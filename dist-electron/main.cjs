@@ -869,7 +869,6 @@ var createWindow = () => {
   const isDev = process.env.NODE_ENV === "development" || !import_electron3.app.isPackaged;
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
-    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(import_path5.default.join(__dirname, "../dist/index.html"));
   }

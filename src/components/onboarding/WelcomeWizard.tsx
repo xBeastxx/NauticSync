@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, Laptop } from 'lucide-react';
+import { Check, Activity } from 'lucide-react';
 import { useSystemStatus } from '../../lib/api/hooks';
 import { syncthing } from '../../lib/syncthing';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,7 +53,7 @@ export const WelcomeWizard = ({ onComplete }: WelcomeWizardProps) => {
                 <div className="p-8">
                     <div className="space-y-6 animate-in slide-in-from-right duration-300">
                         <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-4">
-                            <Laptop className="w-6 h-6" />
+                            <Activity className="w-6 h-6" />
                         </div>
 
                         <div>

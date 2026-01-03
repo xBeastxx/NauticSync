@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card } from '../ui/Card';
 import { syncthing } from '../../lib/syncthing';
 import {
     ArrowDown,
-    ArrowUp,
-    FileIcon,
     FolderSync,
     Pause,
     Play,

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { X, Minus, Square } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';

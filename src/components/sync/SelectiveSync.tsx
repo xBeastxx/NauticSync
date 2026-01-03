@@ -7,7 +7,6 @@ import {
     Laptop,
     Smartphone,
     Server,
-    Save,
     RefreshCw,
     X,
     Trash2
@@ -32,8 +31,6 @@ export const SelectiveSync = () => {
     const [folders, setFolders] = useState<Folder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
-    const [hasChanges, setHasChanges] = useState(false);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -96,17 +93,12 @@ export const SelectiveSync = () => {
             }
         }));
 
-        // Trigger save immediately (Debounce could be added if rapid toggling is expected, but direct save is safer for config consistency)
-        setIsSaving(true);
         try {
             const config = await syncthing.getConfig();
             const updatedConfig = {
                 ...config,
                 folders: config.folders.map((f: Folder) => {
                     if (f.id === folderId) {
-                        // Calculate new State based on current logic but we need to rely on the *optimistic* state we just computed? 
-                        // Better to re-compute the change logic here to be stateless or use the state updater callback result.
-                        // Actually, let's just re-read the folder state from the closure if we can, or duplicate the logic properly.
                         const isShared = f.devices.some(d => d.deviceID === deviceId);
                         const newDevices = isShared
                             ? f.devices.filter(d => d.deviceID !== deviceId)
@@ -118,13 +110,10 @@ export const SelectiveSync = () => {
                 })
             };
             await syncthing.setConfig(updatedConfig);
-            // No need to setHasChanges(true) anymore
         } catch (err) {
             console.error('Failed to auto-save:', err);
             // Revert state on error? For now just alert
             alert('Failed to update: ' + err);
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -149,35 +138,6 @@ export const SelectiveSync = () => {
         }
     };
 
-    const saveChanges = async () => {
-        setIsSaving(true);
-        try {
-            const config = await syncthing.getConfig();
-
-            // Update folders in config
-            const updatedConfig = {
-                ...config,
-                folders: config.folders.map((f: Folder) => {
-                    const localFolder = folders.find(lf => lf.id === f.id);
-                    if (localFolder) {
-                        return {
-                            ...f,
-                            devices: localFolder.devices
-                        };
-                    }
-                    return f;
-                })
-            };
-
-            await syncthing.setConfig(updatedConfig);
-            setHasChanges(false);
-        } catch (err) {
-            console.error('Failed to save config:', err);
-            alert('Failed to save changes: ' + err);
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const getDeviceIcon = (name: string) => {
         const lower = name.toLowerCase();

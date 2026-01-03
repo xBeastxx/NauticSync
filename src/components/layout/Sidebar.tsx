@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigationStore, type AppModule } from '../../store/navigationStore';
-import { LayoutDashboard, Image, Archive, Settings, Activity, ChevronLeft, ChevronRight, Search, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Image, Archive, Settings, ChevronLeft, ChevronRight, Search, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { SearchPanel } from './SearchPanel';
@@ -49,7 +49,7 @@ export const Sidebar = () => {
                 {/* Header / Brand */}
                 <div className={clsx("p-6 flex items-center gap-2 overflow-hidden whitespace-nowrap", isCollapsed && "px-4 justify-center")}>
                     <div className="flex items-center gap-2 text-primary shrink-0">
-                        <Activity className="w-6 h-6 text-yellow-500" />
+                        <img src="/icon.ico" alt="Logo" className="w-8 h-8 rounded-lg" />
                         {!isCollapsed && <span className="text-xl font-bold tracking-tight text-white transition-opacity duration-300">NauticSync</span>}
                     </div>
                 </div>
