@@ -1,7 +1,13 @@
 {
   "name": "nauticsync",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Modern, privacy-focused file synchronization powered by Syncthing",
+  "author": {
+    "name": "NauticGames",
+    "email": "contact@nauticgames.com"
+  },
+  "homepage": "https://github.com/xBeastxx/NauticSync",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -83,6 +89,7 @@
   "build": {
     "appId": "com.nauticgames.nauticsync",
     "productName": "NauticSync",
+    "copyright": "Copyright © 2026 NauticGames. All rights reserved.",
     "win": {
       "icon": "public/icon.ico",
       "target": "nsis"

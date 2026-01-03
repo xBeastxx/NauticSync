@@ -95,7 +95,7 @@ Enable auto-start to launch NauticSync when you log in. Never worry about forget
 ### Download the Installer
 
 1. Go to the [Releases Page](https://github.com/xBeastxx/NauticSync/releases/latest)
-2. Download `NauticSync.Setup.x.x.x.exe`
+2. Download `NauticSync Setup 1.0.0.exe`
 3. Run the installer and follow the prompts
 4. Launch NauticSync and name your device
 5. Start adding folders to sync!
