@@ -35,6 +35,7 @@
     "diff-match-patch": "^1.0.5",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^11.0.2",
+    "electron-updater": "^6.6.2",
     "framer-motion": "^12.23.26",
     "isomorphic-git": "^1.36.1",
     "lucide-react": "^0.562.0",
@@ -75,6 +76,10 @@
     "vite": "^7.2.4",
     "wait-on": "^9.0.3"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xBeastxx/NauticSync.git"
+  },
   "build": {
     "appId": "com.nauticgames.nauticsync",
     "productName": "NauticSync",
@@ -82,6 +87,13 @@
       "icon": "public/icon.ico",
       "target": "nsis"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "xBeastxx",
+        "repo": "NauticSync"
+      }
+    ],
     "directories": {
       "output": "release"
     },
