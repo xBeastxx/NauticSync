@@ -144,6 +144,7 @@ export const ActivityTimeline = () => {
 
     return (
         <Card
+            id="activity-timeline"
             title="Activity Timeline"
             className="flex flex-col h-full"
             action={

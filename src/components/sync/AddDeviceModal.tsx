@@ -30,6 +30,15 @@ export const AddDeviceModal = ({ onClose }: AddDeviceModalProps) => {
         }
     }, [status?.myID]);
 
+    // Close on Escape
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
     const handleCopy = () => {
         if (status?.myID) {
             navigator.clipboard.writeText(status.myID);
@@ -70,7 +79,7 @@ export const AddDeviceModal = ({ onClose }: AddDeviceModalProps) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-0 bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden shadow-2xl">
+            <div id="add-device-modal-content" className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-0 bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden shadow-2xl">
 
                 {/* Left: Input Form */}
                 <div className="p-8 flex flex-col justify-between">
@@ -127,7 +136,7 @@ export const AddDeviceModal = ({ onClose }: AddDeviceModalProps) => {
 
                 {/* Right: My QR Code */}
                 <div className="bg-zinc-950 p-8 flex flex-col items-center justify-center text-center border-l border-zinc-800 relative">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+                    <button id="add-device-modal-close-btn" onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
                         <X className="w-5 h-5" />
                     </button>
 

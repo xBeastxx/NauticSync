@@ -42,7 +42,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 </div>
 
                 {/* View Content */}
-                <div className="flex-1 overflow-auto p-6 md:p-10 pb-12 scroll-smooth">
+                <div id="app-scroll-container" className="flex-1 overflow-auto p-6 md:p-10 pb-12 scroll-smooth">
                     {children}
                 </div>
             </main>

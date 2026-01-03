@@ -28,6 +28,7 @@ export const FolderList = () => {
                             }
                             setIsWizardOpen(true);
                         }}
+                        id="folder-list-add-btn"
                         className={clsx(
                             "p-2 rounded-lg transition-colors",
                             activeWorkflowId

@@ -124,6 +124,23 @@ export const Settings = () => {
 
             {/* Selective Sync */}
             <SelectiveSync />
+
+            {/* Restore Onboarding button section */}
+            <div className="flex items-center justify-between p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+                <div>
+                    <h3 className="font-medium text-white">Reset Onboarding</h3>
+                    <p className="text-sm text-zinc-500">Restart the welcome tutorial to see the tour again.</p>
+                </div>
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('hasCompletedOnboarding');
+                        window.location.reload();
+                    }}
+                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                    Reset & Reload
+                </button>
+            </div>
         </div>
     );
 };

@@ -6,8 +6,35 @@ import { MediaHub } from './components/media/MediaHub';
 import { SmartBackup } from './components/backup/SmartBackup';
 import { ConflictsViewer } from './components/sync/ConflictsViewer';
 
+import { useState, useEffect } from 'react';
+import { WelcomeWizard } from './components/onboarding/WelcomeWizard';
+import { ContextualGuide } from './components/onboarding/ContextualGuide';
+
 function App() {
   const { activeModule } = useNavigationStore();
+
+  // Onboarding State
+  const [showWizard, setShowWizard] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    // Check if onboarded
+    const hasOnboarded = localStorage.getItem('hasCompletedOnboarding');
+    // const hasOnboarded = false; // DEV: Uncomment to force test
+    if (!hasOnboarded) {
+      setShowWizard(true);
+    }
+  }, []);
+
+  const handleWizardComplete = () => {
+    setShowWizard(false);
+    setShowGuide(true); // Start tour immediately after
+  };
+
+  const handleGuideComplete = () => {
+    setShowGuide(false);
+    localStorage.setItem('hasCompletedOnboarding', 'true');
+  };
 
   const renderContent = () => {
     switch (activeModule) {
@@ -28,6 +55,9 @@ function App() {
 
   return (
     <AppLayout>
+      {showWizard && <WelcomeWizard onComplete={handleWizardComplete} />}
+      {showGuide && <ContextualGuide onComplete={handleGuideComplete} />}
+
       <div className="h-full flex flex-col">
         <header className="mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent capitalize">

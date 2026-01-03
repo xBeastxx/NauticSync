@@ -57,6 +57,7 @@ export const Sidebar = () => {
                 {/* Search Button */}
                 <div className="px-3 mb-2">
                     <button
+                        id="sidebar-search-btn"
                         onClick={() => setIsSearchOpen(true)}
                         className={clsx(
                             "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 bg-zinc-800/50 hover:bg-zinc-800 hover:text-white border border-zinc-800 hover:border-zinc-700 transition-all group",
@@ -82,6 +83,7 @@ export const Sidebar = () => {
                         return (
                             <button
                                 key={item.id}
+                                id={`sidebar-nav-${item.id}`}
                                 onClick={() => setActiveModule(item.id as AppModule)}
                                 title={isCollapsed ? item.label : undefined}
                                 className={twMerge(

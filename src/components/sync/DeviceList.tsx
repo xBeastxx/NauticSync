@@ -121,6 +121,7 @@ export const DeviceList = ({ className, sidebarMode, isSidebarCollapsed }: Devic
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl">
             {/* Collapsible Header */}
             <div
+                id="dashboard-header-nodes"
                 className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/30 transition-colors"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
@@ -136,6 +137,7 @@ export const DeviceList = ({ className, sidebarMode, isSidebarCollapsed }: Devic
                     </span>
                 </div>
                 <button
+                    id="dashboard-pair-btn"
                     onClick={(e) => {
                         e.stopPropagation();
                         setIsModalOpen(true);
