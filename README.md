@@ -67,7 +67,7 @@ Enable auto-start to launch NauticSync when you log in. Never worry about forget
 
 ---
 
-## � Screenshots
+##  Screenshots
 
 | Sync Center | Media Hub | Settings |
 |-------------|-----------|----------|
