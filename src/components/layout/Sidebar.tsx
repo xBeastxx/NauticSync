@@ -4,6 +4,7 @@ import { LayoutDashboard, Image, Archive, Settings, ChevronLeft, ChevronRight, S
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { SearchPanel } from './SearchPanel';
+import logoIcon from '../../assets/NauticSyncLogo.ico';
 
 export const Sidebar = () => {
     const { activeModule, setActiveModule } = useNavigationStore();
@@ -49,7 +50,7 @@ export const Sidebar = () => {
                 {/* Header / Brand */}
                 <div className={clsx("p-6 flex items-center gap-2 overflow-hidden whitespace-nowrap", isCollapsed && "px-4 justify-center")}>
                     <div className="flex items-center gap-2 text-primary shrink-0">
-                        <img src="/icon.ico" alt="Logo" className="w-8 h-8 rounded-lg" />
+                        <img src={logoIcon} alt="Logo" className="w-8 h-8 rounded-lg" />
                         {!isCollapsed && <span className="text-xl font-bold tracking-tight text-white transition-opacity duration-300">NauticSync</span>}
                     </div>
                 </div>

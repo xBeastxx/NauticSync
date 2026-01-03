@@ -13,6 +13,24 @@ let tray: Tray | null = null;
 let isQuitting = false;
 let store: any;
 
+// Single Instance Lock - Prevent multiple instances
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    // Another instance is already running, quit this one
+    app.quit();
+} else {
+    // This is the primary instance
+    app.on('second-instance', () => {
+        // Someone tried to run a second instance, focus our window instead
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            if (!mainWindow.isVisible()) mainWindow.show();
+            mainWindow.focus();
+        }
+    });
+}
+
 const createWindow = () => {
     // Create the browser window.
     mainWindow = new BrowserWindow({
