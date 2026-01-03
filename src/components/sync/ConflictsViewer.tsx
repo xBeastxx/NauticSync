@@ -6,14 +6,18 @@ import { formatBytes, formatDate } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
 
 export const ConflictsViewer = () => {
-    const { workflows } = useWorkflowStore();
+    const { workflows, activeWorkflowId } = useWorkflowStore();
 
     // Scan for conflicts
     const { data: conflicts, isLoading, refetch } = useQuery({
-        queryKey: ['conflicts'],
+        queryKey: ['conflicts', activeWorkflowId], // Refetch when workflow changes
         queryFn: async () => {
-            const allFolders = workflows.flatMap(w => w.folders.map(f => f.path));
-            return await window.electronAPI.scanConflicts(allFolders);
+            const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
+            const foldersToScan = activeWorkflow ? activeWorkflow.folders.map(f => f.path) : [];
+
+            if (foldersToScan.length === 0) return [];
+
+            return await window.electronAPI.scanConflicts(foldersToScan);
         },
         refetchInterval: 30000 // Scan every 30s
     });

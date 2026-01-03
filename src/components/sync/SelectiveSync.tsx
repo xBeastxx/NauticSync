@@ -9,9 +9,14 @@ import {
     Server,
     RefreshCw,
     X,
-    Trash2
+    Trash2,
+    Monitor,
+    Tablet,
+    ChevronDown
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { getDeviceType, setDeviceType, DEVICE_TYPES } from '../onboarding/WelcomeWizard';
+import { clearEventsForFolder } from '../../lib/eventWatcher';
 
 interface Device {
     deviceID: string;
@@ -26,7 +31,12 @@ interface Folder {
     devices: { deviceID: string }[];
 }
 
+import { useWorkflowStore } from '../../store/workflowStore';
+
 export const SelectiveSync = () => {
+    const { workflows, activeWorkflowId } = useWorkflowStore();
+    const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
+
     const [devices, setDevices] = useState<Device[]>([]);
     const [folders, setFolders] = useState<Folder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -60,9 +70,11 @@ export const SelectiveSync = () => {
 
             setDevices(remoteDevices);
 
-            // Filter out invalid folders (empty id) only
+            // Filter out invalid folders AND limit to active workflow
+            const activeFolderIds = new Set(activeWorkflow?.folders.map(f => f.syncthingFolderId));
+
             const validFolders = (config.folders || []).filter(
-                (f: Folder) => f.id && f.id.trim() !== ''
+                (f: Folder) => f.id && f.id.trim() !== '' && activeFolderIds.has(f.id)
             );
             setFolders(validFolders);
         } catch (err) {
@@ -130,6 +142,9 @@ export const SelectiveSync = () => {
             };
             await syncthing.setConfig(updatedConfig);
 
+            // Clear event history for this folder
+            clearEventsForFolder(folderId);
+
             // Update local state
             setFolders(prev => prev.filter(f => f.id !== folderId));
         } catch (err) {
@@ -139,7 +154,20 @@ export const SelectiveSync = () => {
     };
 
 
-    const getDeviceIcon = (name: string) => {
+    const getDeviceIcon = (deviceId: string, name: string) => {
+        // First check stored device type
+        const storedType = getDeviceType(deviceId);
+        if (storedType) {
+            switch (storedType) {
+                case 'laptop': return Laptop;
+                case 'desktop': return Monitor;
+                case 'phone': return Smartphone;
+                case 'tablet': return Tablet;
+                case 'server': return Server;
+            }
+        }
+
+        // Fallback: guess by name
         const lower = name.toLowerCase();
         if (lower.includes('phone') || lower.includes('mobile') || lower.includes('iphone') || lower.includes('android')) {
             return Smartphone;
@@ -207,13 +235,14 @@ export const SelectiveSync = () => {
                 {/* Device Cards */}
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {devices.map(device => {
-                        const Icon = getDeviceIcon(device.name);
+                        const Icon = getDeviceIcon(device.deviceID, device.name);
+                        const currentType = getDeviceType(device.deviceID) || 'desktop';
                         return (
                             <div key={device.deviceID} className="bg-zinc-800/50 rounded-lg p-3">
                                 {/* Device Header */}
                                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-700">
                                     <Icon className={clsx("w-5 h-5", device.connected ? "text-green-400" : "text-zinc-500")} />
-                                    <span className="font-medium text-zinc-200">
+                                    <span className="font-medium text-zinc-200 flex-1 truncate">
                                         {device.name || device.deviceID.substring(0, 12)}
                                     </span>
                                     {device.connected ? (
@@ -225,6 +254,23 @@ export const SelectiveSync = () => {
                                             Offline
                                         </span>
                                     )}
+                                    {/* Device Type Selector */}
+                                    <div className="relative">
+                                        <select
+                                            value={currentType}
+                                            onChange={(e) => {
+                                                setDeviceType(device.deviceID, e.target.value as any);
+                                                // Force re-render
+                                                loadData();
+                                            }}
+                                            className="appearance-none bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-[10px] text-zinc-400 pr-5 cursor-pointer hover:border-zinc-600 focus:outline-none focus:border-zinc-500"
+                                        >
+                                            {DEVICE_TYPES.map(type => (
+                                                <option key={type.id} value={type.id}>{type.label}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                                    </div>
                                 </div>
 
                                 {/* Folder Toggles */}

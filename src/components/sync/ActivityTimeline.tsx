@@ -15,6 +15,7 @@ import {
     Play,
     Trash2
 } from 'lucide-react';
+import { useWorkflowStore } from '../../store/workflowStore';
 import { clsx } from 'clsx';
 
 interface SyncEvent {
@@ -39,6 +40,20 @@ const EVENT_CONFIG: Record<string, { icon: React.ComponentType<any>; color: stri
 
 export const ActivityTimeline = () => {
     const [events, setEvents] = useState<SyncEvent[]>([]);
+    const { workflows, activeWorkflowId } = useWorkflowStore();
+
+    // Get active workflow folder IDs (Syncthing IDs) for filtering
+    const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
+    const activeFolderIds = useRef(new Set<string>());
+
+    useEffect(() => {
+        if (activeWorkflow) {
+            activeFolderIds.current = new Set(activeWorkflow.folders.map(f => f.syncthingFolderId));
+        } else {
+            activeFolderIds.current.clear();
+        }
+    }, [activeWorkflow]);
+
     const [isPolling, setIsPolling] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -65,18 +80,31 @@ export const ActivityTimeline = () => {
                 // Update last event ID
                 lastEventId.current = newEvents[newEvents.length - 1].id;
 
-                // Prepend new events (newest first)
-                setEvents(prev => {
-                    // Filter duplicates based on ID
-                    const existingIds = new Set(prev.map(e => e.id));
-                    const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
-
-                    if (uniqueNewEvents.length === 0) return prev;
-
-                    const combined = [...uniqueNewEvents.reverse(), ...prev];
-                    // Keep only last 500 events
-                    return combined.slice(0, 500);
+                // Filter events relevant to active workflow
+                const filteredEvents = newEvents.filter(e => {
+                    const data = e.data || {};
+                    // If event has a folder, check if it belongs to active workflow
+                    if (data.folder) {
+                        return activeFolderIds.current.has(data.folder);
+                    }
+                    // Global events (DeviceConnected, etc.) show for all
+                    return true;
                 });
+
+                if (filteredEvents.length > 0) {
+                    // Prepend new events (newest first)
+                    setEvents(prev => {
+                        // Filter duplicates based on ID
+                        const existingIds = new Set(prev.map(e => e.id));
+                        const uniqueNewEvents = filteredEvents.filter(e => !existingIds.has(e.id));
+
+                        if (uniqueNewEvents.length === 0) return prev;
+
+                        const combined = [...uniqueNewEvents.reverse(), ...prev];
+                        // Keep only last 500 events
+                        return combined.slice(0, 500);
+                    });
+                }
             }
             setError(null);
         } catch (err) {
@@ -92,6 +120,9 @@ export const ActivityTimeline = () => {
     }, []);
 
     useEffect(() => {
+        // Clear events when switching workflows to avoid confusion
+        setEvents([]);
+        lastEventId.current = 0; // Reset to fetch fresh if needed, or keep 0 to fetch recent
         fetchEvents();
 
         if (isPolling) {
@@ -101,7 +132,7 @@ export const ActivityTimeline = () => {
         return () => {
             if (pollInterval.current) clearInterval(pollInterval.current);
         };
-    }, [isPolling, fetchEvents]);
+    }, [isPolling, fetchEvents, activeWorkflowId]); // Re-run when workflow changes
 
     const togglePolling = () => {
         setIsPolling(!isPolling);

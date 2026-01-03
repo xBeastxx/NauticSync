@@ -153,6 +153,30 @@ export class SyncthingClient {
 
         return this.setConfig(newConfig);
     }
+
+    /**
+     * Force rescan a folder to pick up new .stignore patterns
+     */
+    async rescanFolder(folderId: string): Promise<void> {
+        await this.init();
+        if (!this.api) throw new Error('Client not initialized');
+        await this.api.post('/rest/db/scan', null, { params: { folder: folderId } });
+        console.log('Triggered rescan for folder:', folderId);
+    }
+
+    async getFolderStatus(folderId: string) {
+        await this.init();
+        if (!this.api) throw new Error('Client not initialized');
+        const res = await this.api.get('/rest/db/status', { params: { folder: folderId } });
+        return res.data;
+    }
+
+    async getIgnores(folderId: string) {
+        await this.init();
+        if (!this.api) throw new Error('Client not initialized');
+        const res = await this.api.get('/rest/db/ignores', { params: { folder: folderId } });
+        return res.data;
+    }
 }
 
 export const syncthing = new SyncthingClient();

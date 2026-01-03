@@ -23,7 +23,7 @@ export const SmartBackup = () => {
     const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
     const [versions, setVersions] = useState<VersionedFile[]>([]);
     const [isScanning, setIsScanning] = useState(false);
-    const [activeTab, setActiveTab] = useState<'history' | 'config' | 'recovered'>('history');
+    const [activeTab, setActiveTab] = useState<'history' | 'config' | 'recovered' | 'global'>('history');
 
     const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
     const folders = activeWorkflow?.folders || [];
@@ -157,29 +157,44 @@ export const SmartBackup = () => {
                     <RotateCcw className="w-4 h-4" />
                     Recovery Log
                 </button>
+                <div className="flex-1" />
+                <button
+                    onClick={() => setActiveTab('global')}
+                    className={clsx(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                        activeTab === 'global'
+                            ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/30"
+                            : "bg-zinc-800 text-zinc-400 hover:text-white"
+                    )}
+                >
+                    <Settings className="w-4 h-4" />
+                    Global Policy
+                </button>
             </div>
 
-            {/* Folder Selector */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-                {folders.map(folder => (
-                    <button
-                        key={folder.id}
-                        onClick={() => setSelectedFolder(folder.path)}
-                        className={clsx(
-                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0",
-                            selectedFolder === folder.path
-                                ? "bg-blue-500/10 text-blue-500 border border-blue-500/30"
-                                : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
-                        )}
-                    >
-                        <FolderOpen className="w-4 h-4" />
-                        {folder.label}
-                    </button>
-                ))}
-            </div>
+            {/* Folder Selector - Hide if global */}
+            {activeTab !== 'global' && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                    {folders.map(folder => (
+                        <button
+                            key={folder.id}
+                            onClick={() => setSelectedFolder(folder.path)}
+                            className={clsx(
+                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0",
+                                selectedFolder === folder.path
+                                    ? "bg-blue-500/10 text-blue-500 border border-blue-500/30"
+                                    : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
+                            )}
+                        >
+                            <FolderOpen className="w-4 h-4" />
+                            {folder.label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Stats */}
-            {versions.length > 0 && (
+            {versions.length > 0 && activeTab === 'history' && (
                 <div className="flex gap-4 text-sm">
                     <span className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 text-blue-500 rounded-lg">
                         <Archive className="w-4 h-4" />
@@ -219,6 +234,8 @@ export const SmartBackup = () => {
                 </>
             ) : activeTab === 'config' ? (
                 <BackupConfig folderPath={selectedFolder || ''} />
+            ) : activeTab === 'global' ? (
+                <BackupConfig isGlobal={true} />
             ) : (
                 <RecoveryLog />
             )}

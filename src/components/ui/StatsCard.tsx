@@ -6,23 +6,24 @@ interface StatsCardProps {
     label: string;
     value: string | number;
     subValue?: string;
+    subValueClassName?: string;
     icon: LucideIcon;
     trend?: 'up' | 'down' | 'neutral';
     color?: string; // Text color class for the icon/value
 }
 
-export const StatsCard = ({ label, value, subValue, icon: Icon, color = "text-white" }: StatsCardProps) => {
+export const StatsCard = ({ label, value, subValue, subValueClassName, icon: Icon, color = "text-white" }: StatsCardProps) => {
     return (
         <Card className="relative overflow-visible">
             <div className="flex items-start justify-between">
                 <div>
                     <p className="text-zinc-500 text-sm font-medium">{label}</p>
-                    <div className="mt-2 flex items-baseline gap-2">
-                        <h4 className={clsx("text-2xl font-bold tracking-tight", color)}>
+                    <div className="mt-2 flex flex-col">
+                        <h4 className={clsx("text-2xl font-bold tracking-tight leading-none", color)}>
                             {value}
                         </h4>
                         {subValue && (
-                            <span className="text-sm text-zinc-500">{subValue}</span>
+                            <span className={clsx("text-sm font-medium mt-1", subValueClassName || "text-zinc-500")}>{subValue}</span>
                         )}
                     </div>
                 </div>

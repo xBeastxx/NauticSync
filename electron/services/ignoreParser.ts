@@ -104,8 +104,13 @@ export async function importGitignore(folderPath: string): Promise<{ imported: n
 
 /**
  * Apply profile default ignores to a folder
+ * This REPLACES user patterns (not merges) so removals work correctly
  */
 export async function applyProfileIgnores(folderPath: string, patterns: string[]): Promise<{ applied: number; total: number }> {
-    const merged = await mergeIgnores(folderPath, patterns);
-    return { applied: patterns.length, total: merged.length };
+    // Always include defaults + the new user patterns
+    // Do NOT merge with existing - this allows removal of patterns
+    const combined = [...new Set([...DEFAULT_STIGNORE_PATTERNS, ...patterns])];
+
+    await writeStignore(folderPath, combined);
+    return { applied: patterns.length, total: combined.length };
 }

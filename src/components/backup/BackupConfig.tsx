@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
-import { ChevronRight, Clock, ArrowRight, Check, HardDrive, Folder, RefreshCw } from 'lucide-react';
+import { ChevronRight, Clock, ArrowRight, Check, HardDrive, Folder, RefreshCw, Globe } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useBackupStore, type VersioningType } from '../../store/backupStore';
 
 interface BackupConfigProps {
-    folderPath: string;
+    folderPath?: string; // Optional if isGlobal is true
+    isGlobal?: boolean;
     onComplete?: () => void;
 }
 
@@ -45,42 +46,67 @@ const versioningOptions: VersioningOption[] = [
     },
 ];
 
-export const BackupConfig = ({ folderPath, onComplete }: BackupConfigProps) => {
-    const { setFolderConfig, getFolderConfig } = useBackupStore();
-    const existingConfig = getFolderConfig(folderPath);
+export const BackupConfig = ({ folderPath, isGlobal = false, onComplete }: BackupConfigProps) => {
+    const { setFolderConfig, getFolderConfig, globalConfig, setGlobalConfig } = useBackupStore();
 
-    const [step, setStep] = useState<1 | 2 | 3>(existingConfig ? 3 : 1);
-    const [selectedType, setSelectedType] = useState<VersioningType>(existingConfig?.type || 'staggered');
-    const [keepDays, setKeepDays] = useState(existingConfig?.keepDays || 30);
+    // Determine effective config
+    const specificConfig = (folderPath && !isGlobal) ? getFolderConfig(folderPath) : null;
+    const effectiveConfig = isGlobal ? globalConfig : (specificConfig || globalConfig);
+
+    const [step, setStep] = useState<1 | 2 | 3>(3); // Default to view mode
+    const [selectedType, setSelectedType] = useState<VersioningType>(effectiveConfig?.type || 'staggered');
+    const [keepDays, setKeepDays] = useState(effectiveConfig?.keepDays || 30);
     const [isConfiguring, setIsConfiguring] = useState(false);
 
-    // Reset when folder changes
+    // Reset when selection changes
     useEffect(() => {
-        const config = getFolderConfig(folderPath);
-        if (config) {
-            setSelectedType(config.type);
-            setKeepDays(config.keepDays);
+        const config = isGlobal ? globalConfig : (folderPath ? getFolderConfig(folderPath) : null);
+        const displayConfig = config || globalConfig;
+
+        if (displayConfig) {
+            setSelectedType(displayConfig.type);
+            setKeepDays(displayConfig.keepDays);
             setStep(3);
         } else {
             setStep(1);
         }
-    }, [folderPath, getFolderConfig]);
+    }, [folderPath, isGlobal, globalConfig, getFolderConfig]);
 
     const handleComplete = async () => {
         setIsConfiguring(true);
-        // Simulate network/config delay
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Persist to store
-        setFolderConfig(folderPath, {
+        const newConfig = {
             type: selectedType,
             keepDays,
             configuredAt: new Date().toISOString(),
-        });
+        };
+
+        if (isGlobal) {
+            setGlobalConfig(newConfig);
+        } else if (folderPath) {
+            setFolderConfig(folderPath, newConfig);
+        }
 
         setIsConfiguring(false);
         setStep(3);
         onComplete?.();
+    };
+
+    const handleUseGlobal = () => {
+        if (!folderPath) return;
+        // Apply global settings to this folder
+        setSelectedType(globalConfig.type);
+        setKeepDays(globalConfig.keepDays);
+        setStep(3);
+
+        // Mark as using global by resetting specific config (conceptually)
+        // Since we don't have delete, we just align it with global for now.
+        // A better improvement would be to actually delete the key from the store.
+        setFolderConfig(folderPath, {
+            ...globalConfig,
+            configuredAt: new Date().toISOString()
+        });
     };
 
     return (
@@ -109,11 +135,13 @@ export const BackupConfig = ({ folderPath, onComplete }: BackupConfigProps) => {
                 </div>
                 <div className="flex-1">
                     <h3 className="font-medium text-white">
-                        {step === 1 && 'Choose Versioning Type'}
+                        {step === 1 && (isGlobal ? 'Choose Global Default Type' : 'Choose Versioning Type')}
                         {step === 2 && 'Configure Settings'}
-                        {step === 3 && 'Configuration Complete'}
+                        {step === 3 && (isGlobal ? 'Global Configuration Active' : 'Configuration Complete')}
                     </h3>
-                    <p className="text-xs text-zinc-500">{folderPath}</p>
+                    <p className="text-xs text-zinc-500">
+                        {isGlobal ? 'Settings applied to all new folders' : folderPath}
+                    </p>
                 </div>
             </div>
 
@@ -213,7 +241,7 @@ export const BackupConfig = ({ folderPath, onComplete }: BackupConfigProps) => {
                             disabled={isConfiguring}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
-                            {isConfiguring ? 'Configuring...' : 'Apply Configuration'}
+                            {isConfiguring ? 'Saving...' : 'Apply Configuration'}
                             {!isConfiguring && <Check className="w-4 h-4" />}
                         </button>
                     </div>
@@ -226,16 +254,33 @@ export const BackupConfig = ({ folderPath, onComplete }: BackupConfigProps) => {
                     <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
                         <Check className="w-8 h-8 text-emerald-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Configuration Complete!</h3>
+                    <h3 className="text-xl font-bold text-white mb-2">
+                        {isGlobal ? 'Global Policy Active' : 'Configuration Complete!'}
+                    </h3>
                     <p className="text-zinc-400 mb-4">
-                        Your backup settings have been applied. Syncthing will now use <span className="text-white font-medium">{versioningOptions.find(o => o.id === selectedType)?.name}</span> versioning.
+                        {isGlobal
+                            ? 'All new folders will use these settings by default.'
+                            : <>Your backup settings have been applied. Syncthing will now use <span className="text-white font-medium">{versioningOptions.find(o => o.id === selectedType)?.name}</span> versioning.</>
+                        }
                     </p>
-                    <button
-                        onClick={() => setStep(1)}
-                        className="px-4 py-2 text-blue-500 hover:text-blue-400 transition-colors"
-                    >
-                        Reconfigure
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setStep(1)}
+                            className="px-4 py-2 text-blue-500 hover:text-blue-400 transition-colors"
+                        >
+                            Reconfigure
+                        </button>
+                        {!isGlobal && folderPath && (
+                            <button
+                                onClick={handleUseGlobal}
+                                className="px-4 py-2 text-zinc-500 hover:text-zinc-400 transition-colors flex items-center gap-1"
+                                title="Reset to global defaults"
+                            >
+                                <Globe className="w-3 h-3" />
+                                Use Global
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
         </Card>

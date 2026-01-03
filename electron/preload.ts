@@ -1,6 +1,7 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+    getPathForFile: (file: File) => webUtils.getPathForFile(file),
     ping: () => ipcRenderer.invoke('ping'),
     getSyncthingConfig: () => ipcRenderer.invoke('get-syncthing-config'),
     readDirectory: (path: string) => ipcRenderer.invoke('read-directory', path),
@@ -50,6 +51,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // File Operations
     deleteFile: (filePath: string) => ipcRenderer.invoke('delete-file', filePath),
     deleteFileWithBackup: (filePath: string, folderPath: string) => ipcRenderer.invoke('delete-file-with-backup', { filePath, folderPath }),
+    copyFile: (source: string, destination: string) => ipcRenderer.invoke('copy-file', { source, destination }),
+    createDirectory: (path: string) => ipcRenderer.invoke('create-directory', path),
+    rename: (oldPath: string, newPath: string) => ipcRenderer.invoke('rename', { oldPath, newPath }),
+    trashItem: (path: string) => ipcRenderer.invoke('trash-item', path),
+    showInFolder: (path: string) => ipcRenderer.invoke('show-in-folder', path),
+    writeClipboard: (text: string) => ipcRenderer.invoke('write-clipboard', text),
 
     // Window Controls
     closeWindow: () => ipcRenderer.invoke('close-window'),

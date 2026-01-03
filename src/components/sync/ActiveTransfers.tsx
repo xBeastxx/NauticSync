@@ -24,7 +24,12 @@ interface FolderNeed {
     paused: boolean;
 }
 
+import { useWorkflowStore } from '../../store/workflowStore';
+
 export const ActiveTransfers = () => {
+    const { workflows, activeWorkflowId } = useWorkflowStore();
+    const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
+
     const [folders, setFolders] = useState<FolderNeed[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pausingFolder, setPausingFolder] = useState<string | null>(null);
@@ -32,7 +37,9 @@ export const ActiveTransfers = () => {
     const loadTransfers = useCallback(async () => {
         try {
             const config = await syncthing.getConfig();
-            const folderConfigs = config.folders || [];
+            // Filter to only folders in ACTIVE workflow
+            const activeFolderIds = new Set(activeWorkflow?.folders.map(f => f.syncthingFolderId));
+            const folderConfigs = (config.folders || []).filter((f: any) => activeFolderIds.has(f.id));
 
             const folderNeeds: FolderNeed[] = [];
 

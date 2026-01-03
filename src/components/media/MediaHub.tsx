@@ -26,6 +26,13 @@ export const MediaHub = () => {
     const [isScanning, setIsScanning] = useState(false);
     const [lightboxFile, setLightboxFile] = useState<MediaFile | null>(null);
     const [activeTab, setActiveTab] = useState<'explorer' | 'duplicates'>('explorer');
+    const [viewOptions, setViewOptions] = useState<{
+        groupBy: 'type' | 'date' | 'none';
+        sortBy: 'date' | 'name' | 'size';
+    }>({
+        groupBy: 'type',
+        sortBy: 'date'
+    });
 
     // Selection mode for multi-delete
     const [isSelectMode, setIsSelectMode] = useState(false);
@@ -128,9 +135,47 @@ export const MediaHub = () => {
     return (
         <div className="space-y-6 pb-20">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div></div>
-                <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                {/* View Controls */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    <div className="p-1 bg-zinc-900 rounded-lg border border-zinc-800 flex items-center gap-1">
+                        <span className="text-xs text-zinc-500 font-medium px-2">Group:</span>
+                        {(['type', 'date', 'none'] as const).map(mode => (
+                            <button
+                                key={mode}
+                                onClick={() => setViewOptions(prev => ({ ...prev, groupBy: mode }))}
+                                className={clsx(
+                                    "px-3 py-1.5 rounded text-xs font-medium capitalize transition-colors",
+                                    viewOptions.groupBy === mode
+                                        ? "bg-zinc-800 text-white shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-300"
+                                )}
+                            >
+                                {mode}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-1 bg-zinc-900 rounded-lg border border-zinc-800 flex items-center gap-1">
+                        <span className="text-xs text-zinc-500 font-medium px-2">Sort:</span>
+                        {(['date', 'name', 'size'] as const).map(mode => (
+                            <button
+                                key={mode}
+                                onClick={() => setViewOptions(prev => ({ ...prev, sortBy: mode }))}
+                                className={clsx(
+                                    "px-3 py-1.5 rounded text-xs font-medium capitalize transition-colors",
+                                    viewOptions.sortBy === mode
+                                        ? "bg-zinc-800 text-white shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-300"
+                                )}
+                            >
+                                {mode}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 justify-end">
                     {isSelectMode ? (
                         <>
                             <span className="text-sm text-zinc-400 mr-2">
@@ -266,6 +311,7 @@ export const MediaHub = () => {
                     ) : (
                         <ThumbnailGrid
                             files={mediaFiles}
+                            viewOptions={viewOptions}
                             onSelect={isSelectMode ? undefined : setLightboxFile}
                             isSelectMode={isSelectMode}
                             selectedFiles={selectedFiles}

@@ -1,16 +1,20 @@
-import { Folder, HardDrive, MoreVertical, RefreshCw, Plus } from 'lucide-react';
+import { Folder, HardDrive, MoreVertical, RefreshCw, Plus, Network } from 'lucide-react';
 import { useWorkflowStore, type SyncedFolder } from '../../store/workflowStore';
 import { Card } from '../ui/Card';
 import { ProfileBadge } from '../ui/ProfileBadge';
 import { AddFolderWizard } from './AddFolderWizard';
+import { FileExplorer } from '../explorer/FileExplorer';
+import { DeviceNetworkModal } from './DeviceNetworkModal';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GranularSelector } from './GranularSelector';
 import { clsx } from 'clsx';
+import { clearEventsForFolder } from '../../lib/eventWatcher';
 
 export const FolderList = () => {
     const { workflows, activeWorkflowId } = useWorkflowStore();
     const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [openExplorerPath, setOpenExplorerPath] = useState<string | null>(null);
 
     const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
     const foldersToCheck = activeWorkflow ? activeWorkflow.folders : [];
@@ -58,21 +62,37 @@ export const FolderList = () => {
                 <div className="max-h-[400px] overflow-y-auto pr-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {foldersToCheck.map((folder) => (
-                            <FolderCard key={folder.id} folder={folder} />
+                            <FolderCard
+                                key={folder.id}
+                                folder={folder}
+                                onBrowse={(path) => setOpenExplorerPath(path)}
+                            />
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* File Explorer Modal - HMR Trigger */}
+            {openExplorerPath && createPortal(
+                <FileExplorer
+                    initialPath={openExplorerPath}
+                    onClose={() => setOpenExplorerPath(null)}
+                />,
+                document.body
             )}
         </div>
     );
 };
 
-const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
+const FolderCard = ({ folder, onBrowse }: { folder: SyncedFolder; onBrowse: (path: string) => void }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
     const [isEditing, setIsEditing] = useState(false);
+    const [isNetworkOpen, setIsNetworkOpen] = useState(false);
     const [newPatterns, setNewPatterns] = useState<string[]>([]);
     const [detectedProfile, setDetectedProfile] = useState<string | null>(folder.profile || null);
+
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         // Auto-detect profile if not set
@@ -83,7 +103,77 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
         }
     }, [folder.path, folder.profile]);
 
-    const handleSaveRules = () => {
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isDragging) {
+            console.log("Drag Over detected");
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Only disable if we're leaving the card itself, not entering a child
+        // This is tricky with plain dragLeave. For now, simple toggle is fine but might flicker.
+        console.log("Drag Leave detected");
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        console.log("Drop event detected!");
+
+        const files = Array.from(e.dataTransfer.files);
+        console.log("Files dropped:", files.length, files);
+
+        if (files.length === 0) return;
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const file of files) {
+            // Electron exposes 'path' on File object
+            // Use webUtils helper exposed via preload
+            const sourcePath = window.electronAPI.getPathForFile(file);
+            console.log("Processing file:", file.name, "Source:", sourcePath);
+
+            if (!sourcePath) {
+                console.error("No source path found for file:", file.name);
+                failCount++;
+                continue;
+            }
+
+            // Simple filename extraction
+            const destPath = `${folder.path}\\${file.name}`;
+            console.log("Destination:", destPath);
+
+            try {
+                await window.electronAPI.copyFile(sourcePath, destPath);
+                console.log("Copy success for:", file.name);
+                successCount++;
+            } catch (err) {
+                console.error("Copy failed for:", file.name, err);
+                failCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            console.log(`Synced ${successCount} files`);
+            // alert(`Successfully added ${successCount} files to "${folder.label}"`);
+        }
+        if (failCount > 0) {
+            console.error(`Failed to add ${failCount} files.`);
+            alert(`Failed to add ${failCount} files. Check console for details.`);
+        }
+    };
+
+    const handleSaveRules = async () => {
         // Transform absolute/relative
         // GranularSelector returns generic paths (currently absolute due to previous impl).
         // Store expects relative.
@@ -94,6 +184,27 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
             const relative = p.replace(folder.path, '').replace(/^[\\/]/, '');
             return relative;
         });
+
+        // CRITICAL: Write patterns to actual .stignore file for Syncthing
+        try {
+            await window.electronAPI.applyProfileIgnores(folder.path, relativePatterns);
+            console.log('Successfully wrote .stignore patterns:', relativePatterns.length);
+        } catch (err) {
+            console.error('Failed to write .stignore:', err);
+            alert('Failed to save ignore rules: ' + err);
+            return; // Don't update store if file write failed
+        }
+
+        // CRITICAL: Force Syncthing to rescan folder to pick up new .stignore patterns
+        try {
+            const { syncthing } = await import('../../lib/syncthing');
+            // Use syncthingFolderId, not our internal UUID
+            await syncthing.rescanFolder(folder.syncthingFolderId);
+            console.log('Triggered folder rescan for:', folder.syncthingFolderId);
+        } catch (err) {
+            console.warn('Failed to trigger folder rescan (ignore patterns still written):', err);
+            // Don't block - .stignore is written, rescan can happen on next natural cycle
+        }
 
         useWorkflowStore.getState().updateFolderRules(
             useWorkflowStore.getState().activeWorkflowId!,
@@ -107,7 +218,15 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
 
     return (
         <>
-            <Card className="hover:border-zinc-700 transition-colors group cursor-pointer relative">
+            <Card
+                className={clsx(
+                    "transition-colors group cursor-pointer relative",
+                    isDragging ? "border-yellow-500 bg-zinc-800/80" : "hover:border-zinc-700"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
@@ -162,6 +281,17 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setIsMenuOpen(false);
+                                            setIsNetworkOpen(true);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-zinc-800 hover:text-blue-300 flex items-center gap-2 border-b border-zinc-800"
+                                    >
+                                        <Network className="w-3 h-3" />
+                                        Network Intelligence
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsMenuOpen(false);
                                             setIsEditing(true);
                                         }}
                                         className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-2"
@@ -175,6 +305,17 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setIsMenuOpen(false);
+                                            onBrowse(folder.path);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-2"
+                                    >
+                                        <Folder className="w-3 h-3 text-yellow-500" />
+                                        Browse Files
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsMenuOpen(false);
                                             window.electronAPI.openPath(folder.path);
                                         }}
                                         className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white flex items-center gap-2"
@@ -182,13 +323,16 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
-                                        Open in Explorer
+                                        Show in System Explorer
                                     </button>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setIsMenuOpen(false);
-                                            if (confirm(`Stop syncing "${folder.label}"?`)) {
+                                            if (confirm(`Stop syncing "${folder.label}"? This will remove it from the app.`)) {
+                                                // Clear event history for this folder
+                                                clearEventsForFolder(folder.id);
+                                                // Remove from workflow
                                                 useWorkflowStore.getState().removeFolderFromWorkflow(useWorkflowStore.getState().activeWorkflowId!, folder.id);
                                             }
                                         }}
@@ -214,6 +358,11 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
                     <span className="text-emerald-500">Up to date</span>
                 </div>
             </Card>
+
+            {/* Network Intelligence Modal */}
+            {isNetworkOpen && (
+                <DeviceNetworkModal isOpen={isNetworkOpen} onClose={() => setIsNetworkOpen(false)} />
+            )}
 
             {/* Edit Modal */}
             {isEditing && createPortal(
@@ -253,6 +402,8 @@ const FolderCard = ({ folder }: { folder: SyncedFolder }) => {
                 </div>,
                 document.body
             )}
+
+
         </>
     );
 };

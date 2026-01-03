@@ -1,27 +1,25 @@
-import { Image as ImageIcon, Film, ChevronDown, ChevronRight, Check, EyeOff, Music, Box } from 'lucide-react';
+import { Image as ImageIcon, Film, ChevronDown, ChevronRight, Check, EyeOff, Music, Box, Calendar } from 'lucide-react';
 import type { MediaFile } from './MediaHub';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { clsx } from 'clsx';
+
+export interface ViewOptions {
+    groupBy: 'type' | 'date' | 'none';
+    sortBy: 'date' | 'name' | 'size';
+}
 
 interface ThumbnailGridProps {
     files: MediaFile[];
+    viewOptions: ViewOptions;
     onSelect?: (file: MediaFile) => void;
     isSelectMode?: boolean;
     selectedFiles?: Set<string>;
     onToggleSelect?: (fileId: string) => void;
 }
 
-interface CategorySection {
-    id: string;
-    label: string;
-    icon: typeof ImageIcon;
-    files: MediaFile[];
-    color: string;
-}
-
 const STORAGE_KEY = 'megasync-media-collapsed-sections';
 
-export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, onToggleSelect }: ThumbnailGridProps) => {
+export const ThumbnailGrid = ({ files, viewOptions, onSelect, isSelectMode, selectedFiles, onToggleSelect }: ThumbnailGridProps) => {
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
         // Load from localStorage on mount
         try {
@@ -44,13 +42,6 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
         }
     }, [collapsedSections]);
 
-    // Format file size
-    const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    };
-
     const toggleSection = (id: string) => {
         setCollapsedSections(prev => {
             const next = new Set(prev);
@@ -63,18 +54,70 @@ export const ThumbnailGrid = ({ files, onSelect, isSelectMode, selectedFiles, on
         });
     };
 
-    // Group files by type
-    const images = files.filter(f => f.type === 'image');
-    const videos = files.filter(f => f.type === 'video');
-    const audio = files.filter(f => f.type === 'audio');
-    const models = files.filter(f => f.type === 'model');
+    // Format file size
+    const formatSize = (bytes: number) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
 
-    const categories: CategorySection[] = [
-        { id: 'images', label: 'Photos', icon: ImageIcon, files: images, color: 'yellow' },
-        { id: 'videos', label: 'Videos', icon: Film, files: videos, color: 'purple' },
-        { id: 'audio', label: 'Audio', icon: Music, files: audio, color: 'green' },
-        { id: 'models', label: '3D Models', icon: Box, files: models, color: 'blue' },
-    ].filter(cat => cat.files.length > 0);
+    // Process files (Memoized)
+    const processedCategories = useMemo(() => {
+        // 1. Sort
+        const sorted = [...files].sort((a, b) => {
+            switch (viewOptions.sortBy) {
+                case 'name': return a.name.localeCompare(b.name);
+                case 'size': return b.size - a.size;
+                case 'date': default:
+                    return new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime();
+            }
+        });
+
+        // 2. Group
+        if (viewOptions.groupBy === 'none') {
+            return [{
+                id: 'all',
+                label: 'All Files',
+                icon: ImageIcon,
+                files: sorted,
+                color: 'zinc'
+            }];
+        }
+
+        if (viewOptions.groupBy === 'date') {
+            const groups: Record<string, MediaFile[]> = {};
+            sorted.forEach(file => {
+                const date = new Date(file.modifiedTime);
+                const key = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(file);
+            });
+
+            return Object.entries(groups).map(([label, groupFiles]) => ({
+                id: label,
+                label,
+                icon: Calendar,
+                files: groupFiles,
+                color: 'blue'
+            }));
+        }
+
+        // Default: Group by Type
+        const images = sorted.filter(f => f.type === 'image');
+        const videos = sorted.filter(f => f.type === 'video');
+        const audio = sorted.filter(f => f.type === 'audio');
+        const models = sorted.filter(f => f.type === 'model');
+
+        return [
+            { id: 'images', label: 'Photos', icon: ImageIcon, files: images, color: 'yellow' },
+            { id: 'videos', label: 'Videos', icon: Film, files: videos, color: 'purple' },
+            { id: 'audio', label: 'Audio', icon: Music, files: audio, color: 'green' },
+            { id: 'models', label: '3D Models', icon: Box, files: models, color: 'blue' },
+        ].filter(cat => cat.files.length > 0);
+
+    }, [files, viewOptions]);
+
+    const categories = processedCategories;
 
     return (
         <div className="space-y-6">

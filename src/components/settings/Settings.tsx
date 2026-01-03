@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { syncthing } from '../../lib/syncthing';
 import { Card } from '../ui/Card';
-import { Shield, Globe, Lock, Power } from 'lucide-react';
+import { Shield, Globe, Lock, Power, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useConfig } from '../../lib/api/hooks';
 import { BandwidthScheduler } from '../sync/BandwidthScheduler';
@@ -161,6 +161,58 @@ export const Settings = () => {
 
             {/* Bandwidth Scheduler */}
             <BandwidthScheduler />
+
+            {/* Clean Orphaned Data */}
+            <Card title="Data Management" className="mt-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-zinc-200 font-medium">Clean Orphaned Data</p>
+                        <p className="text-xs text-zinc-500 mt-1">Removes leftover data from deleted folders and devices (keeps current data intact).</p>
+                    </div>
+                    <button
+                        onClick={async () => {
+                            try {
+                                // Get current folders and devices from Syncthing
+                                const config = await syncthing.getConfig();
+                                const currentFolderIds = new Set(config.folders.map((f: any) => f.id));
+                                const currentDeviceIds = new Set(config.devices.map((d: any) => d.deviceID));
+
+                                // Clean orphaned events
+                                const eventsRaw = localStorage.getItem('nauticsync-event-history');
+                                if (eventsRaw) {
+                                    const events = JSON.parse(eventsRaw);
+                                    const cleanedEvents = events.filter((e: any) =>
+                                        e.data?.folder && currentFolderIds.has(e.data.folder)
+                                    );
+                                    localStorage.setItem('nauticsync-event-history', JSON.stringify(cleanedEvents));
+                                }
+
+                                // Clean orphaned device types
+                                const typesRaw = localStorage.getItem('nauticsync-device-types');
+                                if (typesRaw) {
+                                    const types = JSON.parse(typesRaw);
+                                    const cleanedTypes: Record<string, string> = {};
+                                    Object.entries(types).forEach(([id, type]) => {
+                                        if (currentDeviceIds.has(id)) {
+                                            cleanedTypes[id] = type as string;
+                                        }
+                                    });
+                                    localStorage.setItem('nauticsync-device-types', JSON.stringify(cleanedTypes));
+                                }
+
+                                alert('Orphaned data cleaned successfully!');
+                            } catch (err) {
+                                console.error('Failed to clean orphaned data:', err);
+                                alert('Failed to clean data: ' + err);
+                            }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-colors text-sm"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Clean Orphans
+                    </button>
+                </div>
+            </Card>
 
 
             {/* Legal Footer */}

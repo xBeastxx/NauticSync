@@ -21,10 +21,11 @@ export const SearchPanel = ({ isOpen, onClose }: SearchPanelProps) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const { workflows } = useWorkflowStore();
+    const { workflows, activeWorkflowId } = useWorkflowStore();
 
-    // Get all folder paths from all workflows
-    const allFolderPaths = workflows.flatMap(w => w.folders.map(f => f.path));
+    // Get folder paths from ACTIVE workflow only
+    const activeWorkflow = workflows.find(w => w.id === activeWorkflowId);
+    const allFolderPaths = activeWorkflow ? activeWorkflow.folders.map(f => f.path) : [];
 
     const search = useCallback(async (searchQuery: string) => {
         if (searchQuery.length < 2) {

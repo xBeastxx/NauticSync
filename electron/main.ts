@@ -303,6 +303,30 @@ app.on('ready', async () => {
         }
     });
 
+    ipcMain.handle('copy-file', async (_, { source, destination }) => {
+        const { FileSystemService } = await import('./services/filesystem');
+        const fileService = new FileSystemService();
+        return await fileService.copyFile(source, destination);
+    });
+
+    ipcMain.handle('create-directory', async (_, path) => {
+        const { FileSystemService } = await import('./services/filesystem');
+        const fileService = new FileSystemService();
+        return await fileService.createDirectory(path);
+    });
+
+    ipcMain.handle('rename', async (_, { oldPath, newPath }) => {
+        const { FileSystemService } = await import('./services/filesystem');
+        const fileService = new FileSystemService();
+        return await fileService.rename(oldPath, newPath);
+    });
+
+    ipcMain.handle('trash-item', async (_, path) => {
+        const { FileSystemService } = await import('./services/filesystem');
+        const fileService = new FileSystemService();
+        return await fileService.trashItem(path);
+    });
+
     // Window Controls
     ipcMain.handle('show-save-dialog', async (event, defaultName) => {
         const { dialog } = require('electron');
@@ -315,17 +339,17 @@ app.on('ready', async () => {
 
     ipcMain.handle('open-path', async (event, pathStr) => {
         const { shell } = require('electron');
-        const fs = await import('fs');
-        try {
-            const stats = await fs.promises.stat(pathStr);
-            if (stats.isFile()) {
-                shell.showItemInFolder(pathStr);
-                return;
-            }
-        } catch {
-            // Ignore error, fallback to openPath
-        }
         return await shell.openPath(pathStr);
+    });
+
+    ipcMain.handle('show-in-folder', async (event, pathStr) => {
+        const { shell } = require('electron');
+        shell.showItemInFolder(pathStr);
+    });
+
+    ipcMain.handle('write-clipboard', async (event, text) => {
+        const { clipboard } = require('electron');
+        clipboard.writeText(text);
     });
 
     ipcMain.handle('close-window', () => {

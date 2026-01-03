@@ -1,7 +1,8 @@
 export interface ElectronAPI {
     ping: () => Promise<string>;
+    getPathForFile: (file: File) => string;
     getSyncthingConfig: () => Promise<{ apiKey: string | null; url: string | null }>;
-    readDirectory: (path: string) => Promise<{ name: string; path: string; isDirectory: boolean }[]>;
+    readDirectory: (path: string) => Promise<{ name: string; path: string; isDirectory: boolean; size: number; modifiedTime: Date }[]>;
     gitStatus: (path: string) => Promise<{ path: string; status: string }[]>;
     gitLog: (path: string) => Promise<{ oid: string; message: string; author: string; timestamp: number }[]>;
     gitInit: (path: string) => Promise<void>;
@@ -70,6 +71,12 @@ export interface ElectronAPI {
     // File Operations
     deleteFile: (filePath: string) => Promise<void>;
     deleteFileWithBackup: (filePath: string, folderPath: string) => Promise<void>;
+    copyFile: (source: string, destination: string) => Promise<void>;
+    createDirectory: (path: string) => Promise<void>;
+    rename: (oldPath: string, newPath: string) => Promise<void>;
+    trashItem: (path: string) => Promise<void>;
+    showInFolder: (path: string) => Promise<void>;
+    writeClipboard: (text: string) => Promise<void>;
 
     // Window Controls
     closeWindow: () => Promise<void>;
