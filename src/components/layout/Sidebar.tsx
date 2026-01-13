@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigationStore, type AppModule } from '../../store/navigationStore';
-import { LayoutDashboard, Image, Archive, Settings, ChevronLeft, ChevronRight, Search, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Image, Archive, Settings, ChevronLeft, ChevronRight, Search, AlertTriangle, Coffee } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { SearchPanel } from './SearchPanel';
@@ -119,6 +119,20 @@ export const Sidebar = () => {
                     >
                         <Settings className="w-5 h-5 shrink-0" />
                         {!isCollapsed && <span>Settings</span>}
+                    </button>
+
+                    {/* Donate Button */}
+                    <button
+                        onClick={() => window.open('https://ko-fi.com/nauticgames', '_blank')}
+                        title={isCollapsed ? "Donate" : undefined}
+                        className={twMerge(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-1",
+                            "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20",
+                            isCollapsed && "justify-center px-2"
+                        )}
+                    >
+                        <Coffee className="w-5 h-5 shrink-0 animate-pulse" />
+                        {!isCollapsed && <span>Donate</span>}
                     </button>
 
                     {!isCollapsed && (
