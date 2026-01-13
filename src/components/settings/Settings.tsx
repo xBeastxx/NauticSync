@@ -11,7 +11,7 @@ import { Switch } from '../ui/Switch';
 import { TermsModal, EulaModal, CreditsModal, PrivacyModal } from './LegalModals';
 
 export const Settings = () => {
-    const { data: config, isLoading } = useConfig();
+    const { data: config } = useConfig();
     const queryClient = useQueryClient();
     const [autoStartEnabled, setAutoStartEnabled] = useState(true);
     const [closeToTray, setCloseToTray] = useState(true);
