@@ -55,9 +55,14 @@ const BaseModal = ({ isOpen, onClose, title, icon: Icon, content, type = 'text' 
                             </div>
 
                             <div className="py-4">
-                                <p className="text-sm text-zinc-500 mb-1">Created By</p>
-                                <h4 className="text-lg font-medium text-white">{CREDITS.developer}</h4>
-                                <a href={`mailto:${CREDITS.email}`} className="text-sm text-zinc-500 hover:text-emerald-400 transition-colors block mt-1">
+                                <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wider">Created By</p>
+                                <div className="flex flex-col items-center gap-1">
+                                    <h4 className="text-lg font-medium text-white">{CREDITS.developer}</h4>
+                                    <span className="text-zinc-500">&</span>
+                                    <h4 className="text-lg font-medium text-white">{(CREDITS as any).collaborator}</h4>
+                                </div>
+
+                                <a href={`mailto:${CREDITS.email}`} className="text-sm text-zinc-500 hover:text-emerald-400 transition-colors block pt-4">
                                     {CREDITS.email}
                                 </a>
                             </div>

@@ -1,6 +1,7 @@
 
 export const CREDITS = {
     developer: "Manuel P. Rodriguez",
+    collaborator: "Ivan Manso",
     company: "NauticGames™",
     email: "nauticgamesstudios@gmail.com",
     role: "Lead Developer & Architect",
@@ -45,27 +46,34 @@ We may terminate or suspend your access immediately, without prior notice or lia
 export const EULA = `
 # END USER LICENSE AGREEMENT (EULA)
 
-This End User License Agreement ("Agreement") is between you and NauticGames™ and governs use of this app made available through the Apple App Store or Google Play Store, or downloaded directly.
+This End User License Agreement ("Agreement") is a legal agreement between you and NauticGames™ handling the use of the NauticSync software. By installing or using the App, you agree to be bound by this Agreement. If you do not agree, do not install or use the App.
 
-1. SCOPE OF LICENSE
-NauticGames™ hereby grants you a limited, non-exclusive, non-transferable, revocable license to use the Application for your personal, non-commercial purposes strictly in accordance with the terms of this Agreement.
+1. LICENSE GRANT
+NauticGames™ grants you a revocable, non-exclusive, non-transferable, limited license to use the Software solely for your personal, non-commercial purposes strictly in accordance with the terms of this Agreement.
 
-2. RESTRICTIONS
-You agree not to, and you will not permit others to:
-* License, sell, rent, lease, assign, distribute, transmit, host, outsource, disclose, or otherwise commercially exploit the Application.
-* Modify, make derivative works of, disassemble, decrypt, reverse compile or reverse engineer any part of the Application.
+2. STRICT RESTRICTIONS (THE "IRONCLAD" CLAUSE)
+You agree NOT to, and you will not permit others to:
+* Decompile, reverse engineer, disassemble, attempt to derive the source code of, or decrypt the Application.
+* Modify, adapt, improve, enhance, translate, or create derivative works from the Application.
+* Violate any applicable laws, rules, or regulations in connection with your access or use of the Application.
+* Remove, alter, or obscure any proprietary notice (including any notice of copyright or trademark) of NauticGames™ or its affiliates.
+* Use the Application for any revenue-generating endeavor, commercial enterprise, or other purpose for which it is not designed or intended.
+* Distribute, rent, lease, lend, sell, transfer, or sub-license the Application to any third party.
 
-3. INTELLECTUAL PROPERTY
-All intellectual property rights, including copyrights, patents, patent disclosures and inventions (whether patentable or not), trademarks service marks, trade secrets, know-how and other confidential information, trade dress, trade names, logos, corporate names and domain names, together with all of the goodwill associated there with, derivative works and all other rights (collectively, "Intellectual Property Rights") that are part of the Software that are otherwise owned by NauticGames™ shall always remain the exclusive property of NauticGames™.
+3. INTELLECTUAL PROPERTY RIGHTS
+The Application, including without limitation all copyrights, patents, trademarks, trade secrets, and other intellectual property rights are, and shall remain, the sole and exclusive property of NauticGames™. You shall not acquire any ownership interest in the Application under this Agreement.
 
-4. NO WARRANTY
-YOU EXPRESSLY UNDERSTAND AND AGREE THAT THE APPLICATION IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS. NAUTICGAMES™ EXPRESSLY DISCLAIMS ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED.
+4. TERMINATION
+This Agreement is effective until terminated by you or NauticGames™. Your rights under this Agreement will terminate automatically without notice if you fail to comply with any of its terms. Upon termination, you must cease all use of the Application and delete all copies of the Application from your devices.
 
-5. LIMITATION OF LIABILITY
-IN NO EVENT SHALL NAUTICGAMES™ BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.
+5. NO WARRANTY
+THE APPLICATION IS PROVIDED "AS IS" AND "AS AVAILABLE" WITH ALL FAULTS AND DEFECTS WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED UNDER APPLICABLE LAW, NAUTICGAMES™ EXPRESSLY DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
 
-6. GOVERNING LAW
-This Agreement shall be governed by the laws of the jurisdiction in which NauticGames™ operates, without regard to its conflict of law provisions.
+6. SEVERABILITY
+If any provision of this Agreement is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect.
+
+7. GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the strict laws of the jurisdiction of NauticGames™, excluding its conflicts of law rules.
 
 Copyright © ${new Date().getFullYear()} NauticGames™. All rights reserved.
 `;

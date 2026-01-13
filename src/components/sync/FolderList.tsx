@@ -1,15 +1,13 @@
-import { Folder, HardDrive, MoreVertical, RefreshCw, Plus, Network } from 'lucide-react';
+import { Folder, HardDrive, MoreVertical, RefreshCw, Plus } from 'lucide-react';
 import { useWorkflowStore, type SyncedFolder } from '../../store/workflowStore';
 import { Card } from '../ui/Card';
 import { ProfileBadge } from '../ui/ProfileBadge';
 import { AddFolderWizard } from './AddFolderWizard';
 import { FileExplorer } from '../explorer/FileExplorer';
-import { DeviceNetworkModal } from './DeviceNetworkModal';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GranularSelector } from './GranularSelector';
 import { clsx } from 'clsx';
-import { clearEventsForFolder } from '../../lib/eventWatcher';
 
 export const FolderList = () => {
     const { workflows, activeWorkflowId } = useWorkflowStore();
@@ -88,7 +86,6 @@ const FolderCard = ({ folder, onBrowse }: { folder: SyncedFolder; onBrowse: (pat
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
     const [isEditing, setIsEditing] = useState(false);
-    const [isNetworkOpen, setIsNetworkOpen] = useState(false);
     const [newPatterns, setNewPatterns] = useState<string[]>([]);
     const [detectedProfile, setDetectedProfile] = useState<string | null>(folder.profile || null);
 
@@ -277,17 +274,7 @@ const FolderCard = ({ folder, onBrowse }: { folder: SyncedFolder; onBrowse: (pat
                                         left: menuPos.left,
                                     }}
                                 >
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setIsMenuOpen(false);
-                                            setIsNetworkOpen(true);
-                                        }}
-                                        className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-zinc-800 hover:text-blue-300 flex items-center gap-2 border-b border-zinc-800"
-                                    >
-                                        <Network className="w-3 h-3" />
-                                        Network Intelligence
-                                    </button>
+
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -330,8 +317,6 @@ const FolderCard = ({ folder, onBrowse }: { folder: SyncedFolder; onBrowse: (pat
                                             e.stopPropagation();
                                             setIsMenuOpen(false);
                                             if (confirm(`Stop syncing "${folder.label}"? This will remove it from the app.`)) {
-                                                // Clear event history for this folder
-                                                clearEventsForFolder(folder.id);
                                                 // Remove from workflow
                                                 useWorkflowStore.getState().removeFolderFromWorkflow(useWorkflowStore.getState().activeWorkflowId!, folder.id);
                                             }
@@ -359,10 +344,7 @@ const FolderCard = ({ folder, onBrowse }: { folder: SyncedFolder; onBrowse: (pat
                 </div>
             </Card>
 
-            {/* Network Intelligence Modal */}
-            {isNetworkOpen && (
-                <DeviceNetworkModal isOpen={isNetworkOpen} onClose={() => setIsNetworkOpen(false)} />
-            )}
+
 
             {/* Edit Modal */}
             {isEditing && createPortal(

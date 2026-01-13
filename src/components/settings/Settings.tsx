@@ -56,7 +56,7 @@ export const Settings = () => {
         }
     });
 
-    if (isLoading) return <div className="p-8 text-zinc-500">Loading configuration...</div>;
+
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-20">
@@ -174,18 +174,10 @@ export const Settings = () => {
                             try {
                                 // Get current folders and devices from Syncthing
                                 const config = await syncthing.getConfig();
-                                const currentFolderIds = new Set(config.folders.map((f: any) => f.id));
+
                                 const currentDeviceIds = new Set(config.devices.map((d: any) => d.deviceID));
 
-                                // Clean orphaned events
-                                const eventsRaw = localStorage.getItem('nauticsync-event-history');
-                                if (eventsRaw) {
-                                    const events = JSON.parse(eventsRaw);
-                                    const cleanedEvents = events.filter((e: any) =>
-                                        e.data?.folder && currentFolderIds.has(e.data.folder)
-                                    );
-                                    localStorage.setItem('nauticsync-event-history', JSON.stringify(cleanedEvents));
-                                }
+
 
                                 // Clean orphaned device types
                                 const typesRaw = localStorage.getItem('nauticsync-device-types');

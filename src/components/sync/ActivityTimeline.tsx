@@ -64,6 +64,12 @@ export const ActivityTimeline = () => {
     const isFetching = useRef(false);
 
     const fetchEvents = useCallback(async () => {
+        // Skip if no active workflow
+        if (!activeWorkflow) {
+            setIsLoading(false);
+            return;
+        }
+
         if (isFetching.current) return;
         isFetching.current = true;
 
@@ -117,7 +123,7 @@ export const ActivityTimeline = () => {
             initialLoadDone.current = true;
             isFetching.current = false;
         }
-    }, []);
+    }, [activeWorkflow]);
 
     useEffect(() => {
         // Clear events when switching workflows to avoid confusion
@@ -208,6 +214,12 @@ export const ActivityTimeline = () => {
                     <div className="flex items-center justify-center h-32 text-zinc-500">
                         <RefreshCw className="w-5 h-5 animate-spin mr-2" />
                         Loading events...
+                    </div>
+                ) : !activeWorkflow ? (
+                    <div className="flex flex-col items-center justify-center h-32 text-zinc-500">
+                        <Clock className="w-8 h-8 mb-2 opacity-50" />
+                        <p className="text-sm">No active workflow selected</p>
+                        <p className="text-xs text-zinc-600 mt-1">Create or select a workflow first</p>
                     </div>
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center h-32 text-zinc-500">

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getDeviceType, setDeviceType, DEVICE_TYPES } from '../onboarding/WelcomeWizard';
-import { clearEventsForFolder } from '../../lib/eventWatcher';
+
 
 interface Device {
     deviceID: string;
@@ -43,12 +43,18 @@ export const SelectiveSync = () => {
     const [error, setError] = useState<string | null>(null);
 
     const loadData = async () => {
+        // Don't attempt to load if no active workflow
+        if (!activeWorkflow) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
             // Add timeout to prevent infinite loading
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Timeout')), 5000)
+                setTimeout(() => reject(new Error('Timeout')), 8000)
             );
 
             const configPromise = syncthing.getConfig();
@@ -77,9 +83,13 @@ export const SelectiveSync = () => {
                 (f: Folder) => f.id && f.id.trim() !== '' && activeFolderIds.has(f.id)
             );
             setFolders(validFolders);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to load config:', err);
-            setError('Could not connect to Syncthing');
+            if (err?.message?.includes('Timeout')) {
+                setError('Connection timeout - Syncthing may be busy');
+            } else {
+                setError('Could not connect to Syncthing');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -142,8 +152,7 @@ export const SelectiveSync = () => {
             };
             await syncthing.setConfig(updatedConfig);
 
-            // Clear event history for this folder
-            clearEventsForFolder(folderId);
+
 
             // Update local state
             setFolders(prev => prev.filter(f => f.id !== folderId));
@@ -177,6 +186,18 @@ export const SelectiveSync = () => {
         }
         return Laptop;
     };
+
+    if (!activeWorkflow) {
+        return (
+            <Card title="Selective Sync" className="flex flex-col">
+                <div className="flex flex-col items-center justify-center h-32 text-zinc-500">
+                    <Laptop className="w-8 h-8 mb-2 opacity-50" />
+                    <p className="text-sm">No active workflow selected</p>
+                    <p className="text-xs text-zinc-600 mt-1">Create or select a workflow first</p>
+                </div>
+            </Card>
+        );
+    }
 
     if (isLoading) {
         return (
